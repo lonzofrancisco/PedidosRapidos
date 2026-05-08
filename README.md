@@ -1,7 +1,7 @@
 # Pedidos Rapidos
 
 SaaS multi-tenant de pedidos para tiendas (comida, ferreteria, etc.).
-Backend Node.js + Express + PostgreSQL, listo para correr con Docker.
+Backend Node.js + Express + PostgreSQL y frontend React + Vite, listos para correr con Docker.
 
 - **Multi-tenant** por `tenant_id` en todas las tablas, resuelto por slug en URL publica o por JWT en el panel admin.
 - **Productos con opciones dinamicas (cards):** grupos `single`/`multi`, con `required`, `min_select`, `max_select` y `price_delta` por opcion.
@@ -15,12 +15,26 @@ Backend Node.js + Express + PostgreSQL, listo para correr con Docker.
 
 ```
 .
-|- docker-compose.yml         # Postgres + API
-|- Dockerfile
+|- docker-compose.yml         # Postgres + API + Web (nginx)
+|- Dockerfile                 # backend
 |- .env.example
 |- db/
 |  |- 01_schema.sql           # esquema multi-tenant
 |  '- 02_seed.sql             # tenant demo + admin + productos
+|- frontend/                  # SPA React + Vite + Tailwind
+|  |- Dockerfile              # multi-stage -> nginx
+|  |- nginx.conf              # sirve estaticos + proxy /api -> api:3000
+|  '- src/
+|     |- api/                 # client + auth/products/orders
+|     |- contexts/            # AuthContext + RequireAuth
+|     |- hooks/useCart.js     # carrito en localStorage por tenant
+|     |- pages/
+|     |  |- HomePage.jsx
+|     |  |- storefront/       # storefront, opciones, carrito, checkout, exito
+|     |  '- admin/            # login, layout, productos, pedidos, detalle
+|     |- utils/format.js
+|     |- App.jsx + main.jsx
+|     '- index.css            # Tailwind base
 |- src/
    |- index.js                # entrypoint
    |- app.js                  # express app
@@ -53,9 +67,21 @@ cp .env.example .env
 docker compose up --build
 ```
 
-La API queda en `http://localhost:3000`. Postgres carga `db/*.sql` solo en la primera creacion del volumen, asi que el tenant demo y el admin se crean automaticamente.
+- **Frontend (storefront + admin):** `http://localhost:8080`
+- **API:** `http://localhost:3000` (proxy desde nginx tambien expuesto en `/api/`)
+- **Healthcheck:** `GET http://localhost:3000/api/v1/health`
 
-Healthcheck: `GET http://localhost:3000/api/v1/health`
+Postgres carga `db/*.sql` solo en la primera creacion del volumen, asi que el tenant demo y el admin se crean automaticamente.
+
+### Frontend en modo dev (sin docker)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Luego visita `http://localhost:5173`. Vite proxea `/api` a `http://localhost:3000` (configurable con `VITE_API_PROXY`).
 
 ### Reset desde cero
 
