@@ -76,7 +76,7 @@ export async function createProduct(tenantId, payload) {
   return withTransaction(async (client) => {
     const { rows: [product] } = await client.query(
       `INSERT INTO products (tenant_id, category_id, name, description, price, image_url, active)
-       VALUES ($1,$2,$3,$4,$5,$6, COALESCE($7, TRUE))
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
        RETURNING id, category_id, name, description, price, image_url, active`,
       [
         tenantId,
@@ -85,7 +85,7 @@ export async function createProduct(tenantId, payload) {
         payload.description ?? null,
         payload.price,
         payload.image_url ?? null,
-        payload.active,
+        payload.active ?? true,
       ]
     );
 
@@ -94,18 +94,28 @@ export async function createProduct(tenantId, payload) {
       const { rows: [group] } = await client.query(
         `INSERT INTO product_option_groups
            (tenant_id, product_id, name, type, required, min_select, max_select, position)
-         VALUES ($1,$2,$3,$4, COALESCE($5,FALSE), COALESCE($6,0), COALESCE($7,1), COALESCE($8,$9))
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
          RETURNING id, product_id, name, type, required, min_select, max_select, position`,
-        [tenantId, product.id, g.name, g.type, g.required, g.min_select, g.max_select, g.position, gi + 1]
+        [
+          tenantId, product.id, g.name, g.type,
+          g.required ?? false,
+          g.min_select ?? 0,
+          g.max_select ?? 1,
+          g.position ?? gi + 1,
+        ]
       );
 
       const options = [];
       for (const [oi, o] of (g.options ?? []).entries()) {
         const { rows: [option] } = await client.query(
           `INSERT INTO product_options (tenant_id, group_id, name, price_delta, position)
-           VALUES ($1,$2,$3, COALESCE($4,0), COALESCE($5,$6))
+           VALUES ($1,$2,$3,$4,$5)
            RETURNING id, group_id, name, price_delta, position, active`,
-          [tenantId, group.id, o.name, o.price_delta, o.position, oi + 1]
+          [
+            tenantId, group.id, o.name,
+            o.price_delta ?? 0,
+            o.position ?? oi + 1,
+          ]
         );
         options.push(option);
       }
