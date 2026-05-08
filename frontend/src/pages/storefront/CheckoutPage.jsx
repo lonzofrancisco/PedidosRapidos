@@ -37,7 +37,11 @@ export default function CheckoutPage() {
         items: cart.items.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
-          option_ids: i.option_ids,
+          // Forma rica con cantidad por opcion (para grupos tipo quantity).
+          selections: (i.options ?? []).map(o => ({
+            option_id: o.option_id,
+            quantity: o.quantity ?? 1,
+          })),
           notes: i.notes,
         })),
       };
@@ -103,7 +107,9 @@ export default function CheckoutPage() {
                 <div>
                   <p className="font-medium">{i.quantity}x {i.product_name}</p>
                   {i.options?.map((o, idx) => (
-                    <p key={idx} className="text-xs text-slate-500">- {o.option_name}</p>
+                    <p key={idx} className="text-xs text-slate-500">
+                      - {(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}{o.option_name}
+                    </p>
                   ))}
                 </div>
                 <span>{formatMoney(i.unit_price * i.quantity)}</span>

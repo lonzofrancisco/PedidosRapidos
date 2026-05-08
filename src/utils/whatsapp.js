@@ -18,7 +18,9 @@ export function buildWhatsappLink({ tenant, order, items }) {
   for (const item of items) {
     lines.push(`${item.quantity}x ${item.product_name} - ${formatMoney(item.subtotal, order.currency)}`);
     for (const opt of item.options ?? []) {
-      lines.push(`  - ${opt.group_name}: ${opt.option_name}`);
+      // Para grupos quantity la cantidad puede ser >1, mostrarla cuando aplique.
+      const qtyPrefix = (opt.quantity ?? 1) > 1 ? `${opt.quantity}x ` : '';
+      lines.push(`  - ${opt.group_name}: ${qtyPrefix}${opt.option_name}`);
     }
     if (item.notes) lines.push(`  _Nota: ${item.notes}_`);
   }

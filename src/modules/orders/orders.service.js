@@ -14,16 +14,25 @@ import { buildWhatsappLink } from '../../utils/whatsapp.js';
  * {
  *   customer: { name, phone, address?, notes? },
  *   items: [
- *     { product_id, quantity, option_ids?: string[], notes? }
+ *     {
+ *       product_id, quantity, notes?,
+ *       // forma rica (preferida) - cada opcion con su cantidad:
+ *       selections?: [{ option_id, quantity? }],
+ *       // forma compacta retro-compatible (qty implicita 1):
+ *       option_ids?: string[]
+ *     }
  *   ]
  * }
  */
 export async function createOrder(tenant, payload) {
   if (!payload.items?.length) throw badRequest('El carrito esta vacio');
 
+  // Normaliza el item a una lista de selecciones {option_id, quantity}.
+  const itemSelections = payload.items.map(itemSelectionsOf);
+
   // 1) Cargar productos con sus grupos y opciones para validar.
   const productIds = [...new Set(payload.items.map(i => i.product_id))];
-  const allOptionIds = [...new Set(payload.items.flatMap(i => i.option_ids ?? []))];
+  const allOptionIds = [...new Set(itemSelections.flatMap(s => s.map(x => x.option_id)))];
 
   const products = (await query(
     `SELECT id, name, price, active FROM products
@@ -44,15 +53,13 @@ export async function createOrder(tenant, payload) {
     [tenant.id, productIds]
   )).rows;
   const groupsByProduct = new Map();
-  const groupById = new Map();
   for (const g of groups) {
-    groupById.set(g.id, g);
     if (!groupsByProduct.has(g.product_id)) groupsByProduct.set(g.product_id, []);
     groupsByProduct.get(g.product_id).push(g);
   }
 
   const options = allOptionIds.length === 0 ? [] : (await query(
-    `SELECT po.id, po.group_id, po.name, po.price_delta, pog.name AS group_name, pog.product_id
+    `SELECT po.id, po.group_id, po.name, po.price_delta, pog.name AS group_name, pog.type AS group_type, pog.product_id
        FROM product_options po
        JOIN product_option_groups pog ON pog.id = po.group_id
       WHERE po.tenant_id = $1 AND po.id = ANY($2::uuid[]) AND po.active = TRUE`,
@@ -64,39 +71,63 @@ export async function createOrder(tenant, payload) {
   const computedItems = [];
   let total = 0;
 
-  for (const raw of payload.items) {
+  for (const [idx, raw] of payload.items.entries()) {
     const product = productById.get(raw.product_id);
     const productGroups = groupsByProduct.get(product.id) ?? [];
-    const selectedOptions = (raw.option_ids ?? []).map(id => {
-      const opt = optionById.get(id);
+
+    // Resolver cada seleccion contra la BD.
+    const resolved = itemSelections[idx].map(sel => {
+      const opt = optionById.get(sel.option_id);
       if (!opt || opt.product_id !== product.id) {
-        throw badRequest(`Opcion invalida ${id} para producto ${product.name}`);
+        throw badRequest(`Opcion invalida ${sel.option_id} para "${product.name}"`);
       }
-      return opt;
+      return { ...opt, quantity: sel.quantity };
     });
 
-    // Validar cardinalidad de cada grupo
-    const countByGroup = new Map();
-    for (const o of selectedOptions) {
-      countByGroup.set(o.group_id, (countByGroup.get(o.group_id) ?? 0) + 1);
-    }
-    for (const g of productGroups) {
-      const count = countByGroup.get(g.id) ?? 0;
-      if (g.required && count < Math.max(g.min_select, 1)) {
-        throw badRequest(`Falta seleccionar opciones del grupo "${g.name}"`);
-      }
-      if (count < g.min_select) {
-        throw badRequest(`Selecciona al menos ${g.min_select} en "${g.name}"`);
-      }
-      if (count > g.max_select) {
-        throw badRequest(`Maximo ${g.max_select} en "${g.name}"`);
-      }
-      if (g.type === 'single' && count > 1) {
-        throw badRequest(`Solo una opcion permitida en "${g.name}"`);
-      }
+    // Validar cardinalidad por grupo segun el tipo.
+    //   single   -> sumQty 0..1, max 1 seleccion, qty=1
+    //   multi    -> sumQty = numero de selecciones distintas, qty=1 c/u
+    //   quantity -> sumQty puede ser cualquier suma de cantidades
+    const byGroup = new Map();
+    for (const r of resolved) {
+      if (!byGroup.has(r.group_id)) byGroup.set(r.group_id, []);
+      byGroup.get(r.group_id).push(r);
     }
 
-    const optionsTotal = selectedOptions.reduce((s, o) => s + Number(o.price_delta), 0);
+    for (const g of productGroups) {
+      const sels = byGroup.get(g.id) ?? [];
+      const sumQty = sels.reduce((s, r) => s + r.quantity, 0);
+
+      if (g.required && sumQty < Math.max(g.min_select, 1)) {
+        throw badRequest(`Falta seleccionar opciones del grupo "${g.name}"`);
+      }
+      if (sumQty < g.min_select) {
+        throw badRequest(`Selecciona al menos ${g.min_select} en "${g.name}"`);
+      }
+      if (sumQty > g.max_select) {
+        throw badRequest(`Maximo ${g.max_select} en "${g.name}"`);
+      }
+
+      if (g.type === 'single') {
+        if (sels.length > 1) throw badRequest(`Solo una opcion permitida en "${g.name}"`);
+        if (sels[0] && sels[0].quantity !== 1) throw badRequest(`En "${g.name}" la cantidad debe ser 1`);
+      }
+      if (g.type === 'multi') {
+        if (sels.some(r => r.quantity !== 1)) {
+          throw badRequest(`En "${g.name}" cada opcion suma 1 (no admite cantidades)`);
+        }
+        const ids = new Set(sels.map(r => r.option_id));
+        if (ids.size !== sels.length) {
+          throw badRequest(`En "${g.name}" no se puede repetir la misma opcion`);
+        }
+      }
+      // 'quantity': sin restricciones extra mas alla del rango total.
+    }
+
+    const optionsTotal = resolved.reduce(
+      (s, r) => s + Number(r.price_delta) * r.quantity,
+      0
+    );
     const unitPrice = Number(product.price) + optionsTotal;
     const subtotal = unitPrice * raw.quantity;
     total += subtotal;
@@ -108,11 +139,12 @@ export async function createOrder(tenant, payload) {
       quantity: raw.quantity,
       subtotal,
       notes: raw.notes ?? null,
-      options: selectedOptions.map(o => ({
-        option_id: o.id,
-        group_name: o.group_name,
-        option_name: o.name,
-        price_delta: Number(o.price_delta),
+      options: resolved.map(r => ({
+        option_id: r.id,
+        group_name: r.group_name,
+        option_name: r.name,
+        price_delta: Number(r.price_delta),
+        quantity: r.quantity,
       })),
     });
   }
@@ -160,9 +192,9 @@ export async function createOrder(tenant, payload) {
       for (const opt of item.options) {
         await client.query(
           `INSERT INTO order_item_options
-             (tenant_id, order_item_id, option_id, group_name, option_name, price_delta)
-           VALUES ($1,$2,$3,$4,$5,$6)`,
-          [tenant.id, itemRow.id, opt.option_id, opt.group_name, opt.option_name, opt.price_delta.toFixed(2)]
+             (tenant_id, order_item_id, option_id, group_name, option_name, price_delta, quantity)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [tenant.id, itemRow.id, opt.option_id, opt.group_name, opt.option_name, opt.price_delta.toFixed(2), opt.quantity]
         );
       }
     }
@@ -192,7 +224,7 @@ export async function getOrder(tenantId, orderId) {
 
   if (items.length > 0) {
     const opts = (await query(
-      `SELECT order_item_id, option_id, group_name, option_name, price_delta
+      `SELECT order_item_id, option_id, group_name, option_name, price_delta, quantity
          FROM order_item_options WHERE order_item_id = ANY($1::uuid[])`,
       [items.map(i => i.id)]
     )).rows;
@@ -233,4 +265,21 @@ export async function updateStatus(tenantId, orderId, status) {
   );
   if (rowCount === 0) throw notFound('Pedido no encontrado');
   return getOrder(tenantId, orderId);
+}
+
+/**
+ * Convierte el item del payload (selections + option_ids retro-compat) a una
+ * lista normalizada [{ option_id, quantity }]. Suma cantidades si el mismo
+ * option_id aparece varias veces.
+ */
+function itemSelectionsOf(item) {
+  const map = new Map();
+  for (const id of item.option_ids ?? []) {
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  for (const sel of item.selections ?? []) {
+    const q = sel.quantity ?? 1;
+    map.set(sel.option_id, (map.get(sel.option_id) ?? 0) + q);
+  }
+  return [...map.entries()].map(([option_id, quantity]) => ({ option_id, quantity }));
 }

@@ -24,7 +24,9 @@ export default function CartDrawer({ open, onClose, cart, currency, onCheckout }
                   {item.options?.length > 0 && (
                     <ul className="text-xs text-slate-600 mt-1 space-y-0.5">
                       {item.options.map((o, i) => (
-                        <li key={i}>- {o.group_name}: {o.option_name}</li>
+                        <li key={i}>
+                          - {o.group_name}: {(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}{o.option_name}
+                        </li>
                       ))}
                     </ul>
                   )}

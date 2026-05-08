@@ -5,10 +5,16 @@ import { formatMoney } from '../../utils/format.js';
  * Modal de personalizacion: muestra los grupos de opciones (cards dinamicas)
  * y construye el item del carrito con los precios calculados localmente.
  *
- * El precio final se recalcula igualmente en el servidor al crear el pedido.
+ * Tipos de grupo soportados:
+ *   - single   : radio (1 opcion)
+ *   - multi    : checkbox (varias opciones, qty=1 cada una)
+ *   - quantity : empanada-style (cada opcion con su contador +/-)
+ *
+ * State: selected[groupId] = Map<optionId, quantity>
+ *
+ * El servidor recalcula los precios igualmente al crear el pedido.
  */
 export default function ProductOptionsModal({ product, currency, onClose, onAdd }) {
-  // selected: { [groupId]: Set<optionId> }
   const [selected, setSelected] = useState(() => initialSelection(product));
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
@@ -16,9 +22,10 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
   const optionsTotal = useMemo(() => {
     let total = 0;
     for (const group of product.option_groups ?? []) {
-      const ids = selected[group.id] ?? new Set();
+      const sels = selected[group.id] ?? new Map();
       for (const opt of group.options) {
-        if (ids.has(opt.id)) total += Number(opt.price_delta);
+        const qty = sels.get(opt.id) ?? 0;
+        if (qty > 0) total += Number(opt.price_delta) * qty;
       }
     }
     return total;
@@ -27,36 +34,59 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
   const unitPrice = Number(product.price) + optionsTotal;
   const error = validateSelection(product, selected);
 
-  const toggle = (group, option) => {
+  const setSelections = (groupId, mapper) => {
     setSelected(prev => {
       const next = { ...prev };
-      const set = new Set(next[group.id] ?? []);
-      if (group.type === 'single') {
-        set.clear();
-        set.add(option.id);
-      } else {
-        if (set.has(option.id)) set.delete(option.id);
-        else if (set.size < group.max_select) set.add(option.id);
-      }
-      next[group.id] = set;
+      const map = new Map(next[groupId] ?? []);
+      mapper(map);
+      next[groupId] = map;
       return next;
+    });
+  };
+
+  const toggleSingle = (group, option) => {
+    setSelections(group.id, (m) => { m.clear(); m.set(option.id, 1); });
+  };
+
+  const toggleMulti = (group, option) => {
+    setSelections(group.id, (m) => {
+      if (m.has(option.id)) m.delete(option.id);
+      else if (totalQty(m) < group.max_select) m.set(option.id, 1);
+    });
+  };
+
+  const incQty = (group, option) => {
+    setSelections(group.id, (m) => {
+      const current = m.get(option.id) ?? 0;
+      if (totalQty(m) + 1 > group.max_select) return; // tope del grupo
+      m.set(option.id, current + 1);
+    });
+  };
+
+  const decQty = (group, option) => {
+    setSelections(group.id, (m) => {
+      const current = m.get(option.id) ?? 0;
+      if (current <= 1) m.delete(option.id);
+      else m.set(option.id, current - 1);
     });
   };
 
   const handleAdd = () => {
     if (error) return;
     const optionItems = [];
-    const optionIds = [];
+    const selections = [];
     for (const group of product.option_groups ?? []) {
-      const ids = selected[group.id] ?? new Set();
+      const sels = selected[group.id] ?? new Map();
       for (const opt of group.options) {
-        if (ids.has(opt.id)) {
-          optionIds.push(opt.id);
+        const qty = sels.get(opt.id) ?? 0;
+        if (qty > 0) {
+          selections.push({ option_id: opt.id, quantity: qty });
           optionItems.push({
             option_id: opt.id,
             group_name: group.name,
             option_name: opt.name,
             price_delta: Number(opt.price_delta),
+            quantity: qty,
           });
         }
       }
@@ -66,7 +96,7 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
       product_name: product.name,
       unit_price: unitPrice,
       quantity,
-      option_ids: optionIds,
+      selections,
       options: optionItems,
       notes: notes.trim() || undefined,
     });
@@ -86,49 +116,87 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1">
-          {(product.option_groups ?? []).map(group => (
-            <fieldset key={group.id}>
-              <legend className="font-semibold text-sm flex items-center gap-2">
-                {group.name}
-                {group.required && <span className="badge bg-red-100 text-red-700">Obligatorio</span>}
-                {group.type === 'multi' && (
-                  <span className="text-xs text-slate-500 font-normal">
-                    Max {group.max_select}
-                  </span>
-                )}
-              </legend>
-              <div className="mt-2 space-y-1">
-                {group.options.map(opt => {
-                  const ids = selected[group.id] ?? new Set();
-                  const checked = ids.has(opt.id);
-                  return (
-                    <label
-                      key={opt.id}
-                      className={`flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer transition ${
-                        checked ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <input
-                          type={group.type === 'single' ? 'radio' : 'checkbox'}
-                          name={`g-${group.id}`}
-                          checked={checked}
-                          onChange={() => toggle(group, opt)}
-                          className="accent-brand-600"
-                        />
-                        <span className="text-sm">{opt.name}</span>
-                      </span>
-                      {Number(opt.price_delta) > 0 && (
-                        <span className="text-sm text-slate-600">
-                          + {formatMoney(opt.price_delta, currency)}
+          {(product.option_groups ?? []).map(group => {
+            const sels = selected[group.id] ?? new Map();
+            const sumQty = totalQty(sels);
+
+            return (
+              <fieldset key={group.id}>
+                <legend className="font-semibold text-sm flex items-center gap-2 flex-wrap">
+                  {group.name}
+                  {group.required && <span className="badge bg-red-100 text-red-700">Obligatorio</span>}
+                  {group.type === 'multi' && (
+                    <span className="text-xs text-slate-500 font-normal">Max {group.max_select}</span>
+                  )}
+                  {group.type === 'quantity' && (
+                    <span className="text-xs text-slate-500 font-normal">
+                      {sumQty} / {group.max_select} unidades
+                    </span>
+                  )}
+                </legend>
+
+                <div className="mt-2 space-y-1">
+                  {group.options.map(opt => {
+                    const qty = sels.get(opt.id) ?? 0;
+
+                    if (group.type === 'quantity') {
+                      return (
+                        <div key={opt.id} className={`flex items-center justify-between border rounded-lg px-3 py-2 ${qty > 0 ? 'border-brand-500 bg-brand-50' : 'border-slate-200'}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm">{opt.name}</p>
+                            {Number(opt.price_delta) > 0 && (
+                              <p className="text-xs text-slate-500">{formatMoney(opt.price_delta, currency)} c/u</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => decQty(group, opt)}
+                              disabled={qty === 0}
+                              className="btn-secondary px-2 py-1 disabled:opacity-30"
+                            >-</button>
+                            <span className="w-6 text-center text-sm font-semibold">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => incQty(group, opt)}
+                              disabled={sumQty >= group.max_select}
+                              className="btn-secondary px-2 py-1 disabled:opacity-30"
+                            >+</button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const checked = qty > 0;
+                    return (
+                      <label
+                        key={opt.id}
+                        className={`flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer transition ${
+                          checked ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <input
+                            type={group.type === 'single' ? 'radio' : 'checkbox'}
+                            name={`g-${group.id}`}
+                            checked={checked}
+                            onChange={() => group.type === 'single' ? toggleSingle(group, opt) : toggleMulti(group, opt)}
+                            className="accent-brand-600"
+                          />
+                          <span className="text-sm">{opt.name}</span>
                         </span>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ))}
+                        {Number(opt.price_delta) > 0 && (
+                          <span className="text-sm text-slate-600">
+                            + {formatMoney(opt.price_delta, currency)}
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          })}
 
           <div>
             <label className="label">Notas (opcional)</label>
@@ -146,17 +214,11 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="btn-secondary px-3"
-                onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              >-</button>
+              <button type="button" className="btn-secondary px-3"
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
               <span className="w-8 text-center font-semibold">{quantity}</span>
-              <button
-                type="button"
-                className="btn-secondary px-3"
-                onClick={() => setQuantity(q => Math.min(99, q + 1))}
-              >+</button>
+              <button type="button" className="btn-secondary px-3"
+                      onClick={() => setQuantity(q => Math.min(99, q + 1))}>+</button>
             </div>
             <button
               type="button"
@@ -173,13 +235,18 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
   );
 }
 
+function totalQty(map) {
+  let total = 0;
+  for (const v of map.values()) total += v;
+  return total;
+}
+
 function initialSelection(product) {
   const sel = {};
   for (const group of product.option_groups ?? []) {
-    sel[group.id] = new Set();
-    // si es single + required, preselecciona la primera para evitar estados invalidos
+    sel[group.id] = new Map();
     if (group.type === 'single' && group.required && group.options[0]) {
-      sel[group.id].add(group.options[0].id);
+      sel[group.id].set(group.options[0].id, 1);
     }
   }
   return sel;
@@ -187,14 +254,15 @@ function initialSelection(product) {
 
 function validateSelection(product, selected) {
   for (const group of product.option_groups ?? []) {
-    const count = (selected[group.id] ?? new Set()).size;
-    if (group.required && count < Math.max(group.min_select, 1)) {
-      return `Selecciona una opcion en "${group.name}"`;
+    const sumQty = totalQty(selected[group.id] ?? new Map());
+    if (group.required && sumQty < Math.max(group.min_select, 1)) {
+      const noun = group.type === 'quantity' ? 'unidad' : 'opcion';
+      return `Selecciona al menos 1 ${noun} en "${group.name}"`;
     }
-    if (count < group.min_select) {
+    if (sumQty < group.min_select) {
       return `Selecciona al menos ${group.min_select} en "${group.name}"`;
     }
-    if (count > group.max_select) {
+    if (sumQty > group.max_select) {
       return `Maximo ${group.max_select} en "${group.name}"`;
     }
   }

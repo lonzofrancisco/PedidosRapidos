@@ -19,7 +19,7 @@ const optionSchema = z.object({
 const groupSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1),
-  type: z.enum(['single', 'multi']),
+  type: z.enum(['single', 'multi', 'quantity']),
   required: z.boolean().optional(),
   min_select: z.number().int().min(0).optional(),
   max_select: z.number().int().min(1).optional(),

@@ -17,6 +17,12 @@ const createOrderSchema = z.object({
   items: z.array(z.object({
     product_id: z.string().uuid(),
     quantity: z.number().int().min(1).max(99),
+    // Forma rica: lista de selecciones con cantidad por opcion (qty default 1).
+    selections: z.array(z.object({
+      option_id: z.string().uuid(),
+      quantity: z.number().int().min(1).max(999).optional(),
+    })).optional(),
+    // Forma compacta retro-compatible: cada id se cuenta como qty 1.
     option_ids: z.array(z.string().uuid()).optional(),
     notes: z.string().max(200).optional(),
   })).min(1),

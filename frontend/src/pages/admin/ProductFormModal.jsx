@@ -166,6 +166,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                             onChange={(e) => updateGroup(gi, { type: e.target.value })}>
                       <option value="single">Single (radio)</option>
                       <option value="multi">Multi (checkbox)</option>
+                      <option value="quantity">Cantidad por opcion (empanadas)</option>
                     </select>
                     <label className="flex items-center gap-1 text-xs">
                       <input type="checkbox" checked={g.required}
@@ -173,19 +174,25 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                       Obligatorio
                     </label>
                   </div>
-                  {g.type === 'multi' && (
+                  {(g.type === 'multi' || g.type === 'quantity') && (
                     <div className="grid grid-cols-2 gap-2">
                       <label className="text-xs">
-                        Min
+                        {g.type === 'quantity' ? 'Min total' : 'Min'}
                         <input className="input mt-1" type="number" min="0" value={g.min_select}
                                onChange={(e) => updateGroup(gi, { min_select: e.target.value })} />
                       </label>
                       <label className="text-xs">
-                        Max
+                        {g.type === 'quantity' ? 'Max total' : 'Max'}
                         <input className="input mt-1" type="number" min="1" value={g.max_select}
                                onChange={(e) => updateGroup(gi, { max_select: e.target.value })} />
                       </label>
                     </div>
+                  )}
+                  {g.type === 'quantity' && (
+                    <p className="text-xs text-slate-500">
+                      Cada opcion tendra su propio contador en el storefront.
+                      Min/Max se aplican a la cantidad TOTAL del grupo.
+                    </p>
                   )}
 
                   <div className="space-y-1">

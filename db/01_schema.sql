@@ -58,13 +58,20 @@ CREATE INDEX IF NOT EXISTS idx_products_tenant ON products(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_products_tenant_active ON products(tenant_id, active);
 
 -- ----- Grupos de opciones (cards dinamicas) ---------------------------
--- type:  'single' = radio (1 opcion)   |   'multi' = checkbox (N opciones)
+-- type:
+--   'single'   = radio  (1 opcion exacta, qty siempre 1)
+--   'multi'    = checkbox (varias opciones, qty siempre 1 c/u)
+--   'quantity' = empanada-style (varias opciones, cada una con su cantidad)
+-- min_select / max_select aplican a la cantidad TOTAL del grupo:
+--   single   -> 0..1
+--   multi    -> count(opciones)
+--   quantity -> sum(qty)
 CREATE TABLE IF NOT EXISTS product_option_groups (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id  UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   name       TEXT NOT NULL,
-  type       TEXT NOT NULL CHECK (type IN ('single','multi')),
+  type       TEXT NOT NULL CHECK (type IN ('single','multi','quantity')),
   required   BOOLEAN NOT NULL DEFAULT FALSE,
   min_select INT NOT NULL DEFAULT 0,
   max_select INT NOT NULL DEFAULT 1,
@@ -128,6 +135,7 @@ CREATE TABLE IF NOT EXISTS order_item_options (
   option_id       UUID REFERENCES product_options(id) ON DELETE SET NULL,
   group_name      TEXT NOT NULL,           -- snapshot
   option_name     TEXT NOT NULL,           -- snapshot
-  price_delta     NUMERIC(12,2) NOT NULL   -- snapshot
+  price_delta     NUMERIC(12,2) NOT NULL,  -- snapshot
+  quantity        INT NOT NULL DEFAULT 1 CHECK (quantity > 0)
 );
 CREATE INDEX IF NOT EXISTS idx_oio_item ON order_item_options(order_item_id);

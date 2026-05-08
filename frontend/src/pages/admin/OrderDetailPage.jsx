@@ -110,7 +110,9 @@ export default function OrderDetailPage() {
               <div>
                 <p className="font-medium">{item.quantity}x {item.product_name}</p>
                 {item.options?.map((o, i) => (
-                  <p key={i} className="text-xs text-slate-500">- {o.group_name}: {o.option_name}</p>
+                  <p key={i} className="text-xs text-slate-500">
+                    - {o.group_name}: {(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}{o.option_name}
+                  </p>
                 ))}
                 {item.notes && <p className="text-xs italic text-slate-500">{item.notes}</p>}
               </div>
