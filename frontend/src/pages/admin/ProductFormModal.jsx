@@ -80,9 +80,21 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
     }
   };
 
+  // Evita que Enter dentro de un <input> dispare el submit del formulario:
+  // hacia eso que el usuario perdiera filas a medio rellenar.
+  const blockEnterSubmit = (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-30 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <form onSubmit={submit} className="bg-white w-full sm:max-w-2xl max-h-[95vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
+      <form
+        onSubmit={submit}
+        onKeyDown={blockEnterSubmit}
+        className="bg-white w-full sm:max-w-2xl max-h-[95vh] rounded-t-2xl sm:rounded-2xl flex flex-col"
+      >
         <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="font-bold">{isEdit ? 'Editar producto' : 'Nuevo producto'}</h2>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
@@ -160,6 +172,9 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                   )}
 
                   <div className="space-y-1">
+                    {g.options.length === 0 && (
+                      <p className="text-xs text-slate-400 italic">Sin opciones aun.</p>
+                    )}
                     {g.options.map((o, oi) => (
                       <div key={o.id ?? `new-${oi}`} className="flex gap-2">
                         <input className="input flex-1" placeholder="Opcion (ej: Doble)"
@@ -174,9 +189,17 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                     ))}
                   </div>
 
-                  <div className="flex justify-between">
-                    <button type="button" onClick={() => addOption(gi)} className="text-xs text-brand-600">+ opcion</button>
-                    <button type="button" onClick={() => removeGroup(gi)} className="text-xs text-red-600">Quitar grupo</button>
+                  <div className="flex justify-between items-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => addOption(gi)}
+                      className="btn-secondary text-xs py-1"
+                    >
+                      + Agregar opcion
+                    </button>
+                    <button type="button" onClick={() => removeGroup(gi)} className="text-xs text-red-600 hover:underline">
+                      Quitar grupo
+                    </button>
                   </div>
                 </div>
               ))}
