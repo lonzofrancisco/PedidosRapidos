@@ -1,5 +1,5 @@
 import { query, withTransaction } from '../../config/db.js';
-import { notFound } from '../../utils/httpError.js';
+import { badRequest, notFound } from '../../utils/httpError.js';
 
 /**
  * Lista productos del tenant, con sus grupos de opciones y opciones individuales.
@@ -117,26 +117,155 @@ export async function createProduct(tenantId, payload) {
 }
 
 export async function updateProduct(tenantId, productId, patch) {
-  const fields = [];
-  const values = [];
-  const allowed = ['name', 'description', 'price', 'image_url', 'category_id', 'active'];
-  for (const key of allowed) {
-    if (Object.prototype.hasOwnProperty.call(patch, key)) {
-      values.push(patch[key]);
-      fields.push(`${key} = $${values.length}`);
+  // Verifica que el producto pertenezca al tenant antes de tocar nada.
+  const exists = await query(
+    `SELECT 1 FROM products WHERE tenant_id = $1 AND id = $2`,
+    [tenantId, productId]
+  );
+  if (exists.rowCount === 0) throw notFound('Producto no encontrado');
+
+  await withTransaction(async (client) => {
+    // 1) Campos basicos del producto
+    const fields = [];
+    const values = [];
+    const allowed = ['name', 'description', 'price', 'image_url', 'category_id', 'active'];
+    for (const key of allowed) {
+      if (Object.prototype.hasOwnProperty.call(patch, key)) {
+        values.push(patch[key]);
+        fields.push(`${key} = $${values.length}`);
+      }
+    }
+    if (fields.length > 0) {
+      values.push(tenantId, productId);
+      await client.query(
+        `UPDATE products SET ${fields.join(', ')}
+          WHERE tenant_id = $${values.length - 1} AND id = $${values.length}`,
+        values
+      );
+    }
+
+    // 2) Reemplazo de grupos/opciones (opcional)
+    if (Array.isArray(patch.option_groups)) {
+      await replaceOptionGroups(client, tenantId, productId, patch.option_groups);
+    }
+  });
+
+  return getProduct(tenantId, productId);
+}
+
+/**
+ * Reemplaza los grupos de opciones de un producto haciendo diff por id:
+ *   - Grupos/opciones presentes con id existente -> UPDATE
+ *   - Grupos/opciones nuevos (sin id)            -> INSERT
+ *   - Grupos/opciones omitidos del payload       -> DELETE
+ *
+ * Los snapshots ya guardados en order_items / order_item_options no se ven
+ * afectados (se conservan name + price). FKs usan ON DELETE SET NULL para
+ * mantener el historial consistente.
+ */
+async function replaceOptionGroups(client, tenantId, productId, incomingGroups) {
+  const existingGroups = (await client.query(
+    `SELECT id FROM product_option_groups WHERE tenant_id = $1 AND product_id = $2`,
+    [tenantId, productId]
+  )).rows;
+  const existingGroupIds = new Set(existingGroups.map(r => r.id));
+  const incomingGroupIds = new Set(
+    incomingGroups.filter(g => g.id).map(g => g.id)
+  );
+
+  // Validar que todo id de grupo enviado pertenezca al producto
+  for (const g of incomingGroups) {
+    if (g.id && !existingGroupIds.has(g.id)) {
+      throw badRequest(`Grupo de opciones desconocido: ${g.id}`);
     }
   }
-  if (fields.length === 0) return getProduct(tenantId, productId);
 
-  values.push(tenantId, productId);
-  const { rows } = await query(
-    `UPDATE products SET ${fields.join(', ')}
-      WHERE tenant_id = $${values.length - 1} AND id = $${values.length}
-      RETURNING id`,
-    values
-  );
-  if (rows.length === 0) throw notFound('Producto no encontrado');
-  return getProduct(tenantId, productId);
+  // Borrar grupos que el cliente quito (cascade borra sus opciones)
+  const groupsToDelete = [...existingGroupIds].filter(id => !incomingGroupIds.has(id));
+  if (groupsToDelete.length > 0) {
+    await client.query(
+      `DELETE FROM product_option_groups
+        WHERE tenant_id = $1 AND id = ANY($2::uuid[])`,
+      [tenantId, groupsToDelete]
+    );
+  }
+
+  // Upsert grupo a grupo (mantiene orden segun el array entrante)
+  for (const [gi, g] of incomingGroups.entries()) {
+    const groupValues = [
+      g.name,
+      g.type,
+      g.required ?? false,
+      g.min_select ?? 0,
+      g.max_select ?? 1,
+      g.position ?? gi + 1,
+    ];
+
+    let groupId = g.id;
+    if (groupId) {
+      await client.query(
+        `UPDATE product_option_groups
+            SET name=$1, type=$2, required=$3, min_select=$4, max_select=$5, position=$6
+          WHERE tenant_id=$7 AND id=$8`,
+        [...groupValues, tenantId, groupId]
+      );
+    } else {
+      const r = await client.query(
+        `INSERT INTO product_option_groups
+           (tenant_id, product_id, name, type, required, min_select, max_select, position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id`,
+        [tenantId, productId, ...groupValues]
+      );
+      groupId = r.rows[0].id;
+    }
+
+    // Diff de opciones del grupo
+    const existingOpts = (await client.query(
+      `SELECT id FROM product_options WHERE tenant_id = $1 AND group_id = $2`,
+      [tenantId, groupId]
+    )).rows;
+    const existingOptIds = new Set(existingOpts.map(r => r.id));
+    const incomingOptIds = new Set((g.options ?? []).filter(o => o.id).map(o => o.id));
+
+    for (const o of g.options ?? []) {
+      if (o.id && !existingOptIds.has(o.id)) {
+        throw badRequest(`Opcion desconocida: ${o.id}`);
+      }
+    }
+
+    const optsToDelete = [...existingOptIds].filter(id => !incomingOptIds.has(id));
+    if (optsToDelete.length > 0) {
+      await client.query(
+        `DELETE FROM product_options
+          WHERE tenant_id = $1 AND id = ANY($2::uuid[])`,
+        [tenantId, optsToDelete]
+      );
+    }
+
+    for (const [oi, o] of (g.options ?? []).entries()) {
+      const optValues = [
+        o.name,
+        o.price_delta ?? 0,
+        o.position ?? oi + 1,
+        o.active ?? true,
+      ];
+      if (o.id) {
+        await client.query(
+          `UPDATE product_options
+              SET name=$1, price_delta=$2, position=$3, active=$4
+            WHERE tenant_id=$5 AND id=$6`,
+          [...optValues, tenantId, o.id]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO product_options (tenant_id, group_id, name, price_delta, position, active)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [tenantId, groupId, ...optValues]
+        );
+      }
+    }
+  }
 }
 
 export async function deleteProduct(tenantId, productId) {

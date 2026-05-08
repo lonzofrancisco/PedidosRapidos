@@ -7,13 +7,17 @@ import { requireAuth, requireRole } from '../../middleware/auth.js';
 import * as service from './products.service.js';
 
 // ---------- Schemas ----------------------------------------------------
+// id opcional: cuando se envia, el backend hace UPDATE; si no, INSERT.
 const optionSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().min(1),
   price_delta: z.number().nonnegative().optional(),
   position: z.number().int().optional(),
+  active: z.boolean().optional(),
 });
 
 const groupSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().min(1),
   type: z.enum(['single', 'multi']),
   required: z.boolean().optional(),
@@ -33,7 +37,9 @@ const createProductSchema = z.object({
   option_groups: z.array(groupSchema).optional(),
 });
 
-const updateProductSchema = createProductSchema.partial().omit({ option_groups: true });
+// PATCH acepta los mismos campos en modo opcional, incluyendo option_groups
+// como reemplazo total (con diff por id en backend).
+const updateProductSchema = createProductSchema.partial();
 
 const idParam = z.object({ id: z.string().uuid() });
 
