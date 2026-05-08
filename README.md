@@ -83,6 +83,29 @@ npm run dev
 
 Luego visita `http://localhost:5173`. Vite proxea `/api` a `http://localhost:3000` (configurable con `VITE_API_PROXY`).
 
+### Acceder desde otro dispositivo (celular en la misma red WiFi)
+
+El compose ya bindea los puertos a todas las interfaces, asi que solo hay que (1) saber la IP de la PC y (2) abrir el puerto en el firewall.
+
+1. **Saca tu IP local:**
+
+   ```powershell
+   ipconfig | findstr IPv4
+   ```
+
+2. **Abre los puertos en el Firewall de Windows** (una sola vez). Click derecho en `scripts/open-firewall-windows.ps1` -> *Ejecutar con PowerShell* (necesita permisos de admin), o bien:
+
+   ```powershell
+   # Desde una terminal admin
+   New-NetFirewallRule -DisplayName 'PedidosRapidos Web' -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private,Domain
+   ```
+
+3. **Desde el celular** (en la misma WiFi/LAN): abre `http://<TU_IP>:8080` en el navegador. Por ejemplo `http://192.168.0.137:8080`.
+
+> El frontend usa URLs relativas (`/api/...`), asi que las llamadas a la API pasan automaticamente por nginx y siguen funcionando sin importar el host con el que se acceda. No hay que cambiar nada en el codigo.
+
+Para revertir el firewall: `Remove-NetFirewallRule -DisplayName 'PedidosRapidos*'` en una terminal admin.
+
 ### Reset desde cero
 
 ```bash
