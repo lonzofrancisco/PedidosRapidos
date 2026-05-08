@@ -55,8 +55,25 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+
+    // Validacion: rechazar grupos sin nombre o con opciones sin nombre.
+    // Antes los filtraba silenciosamente, lo que hacia "desaparecer" filas
+    // que el usuario llenaba parcialmente.
+    for (const [gi, g] of groups.entries()) {
+      if (!g.name.trim()) {
+        setError(`El grupo #${gi + 1} no tiene nombre.`);
+        return;
+      }
+      for (const [oi, o] of g.options.entries()) {
+        if (!o.name.trim()) {
+          setError(`La opcion #${oi + 1} del grupo "${g.name}" no tiene nombre.`);
+          return;
+        }
+      }
+    }
+
+    setSubmitting(true);
     try {
       const payload = {
         name: form.name,
@@ -143,7 +160,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
               {groups.map((g, gi) => (
                 <div key={g.id ?? `new-${gi}`} className="border border-slate-200 rounded-lg p-3 space-y-2">
                   <div className="grid sm:grid-cols-3 gap-2">
-                    <input className="input" placeholder="Nombre del grupo"
+                    <input className="input" placeholder="Nombre del grupo *" required
                            value={g.name} onChange={(e) => updateGroup(gi, { name: e.target.value })} />
                     <select className="input" value={g.type}
                             onChange={(e) => updateGroup(gi, { type: e.target.value })}>
