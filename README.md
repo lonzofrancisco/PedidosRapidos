@@ -304,7 +304,7 @@ Hasta que se agregue un endpoint de superadmin, se puede insertar manualmente:
 INSERT INTO tenants (slug, name, whatsapp_number) VALUES ('mi-tienda', 'Mi Tienda', '521...');
 INSERT INTO users (tenant_id, email, password_hash, role)
   SELECT id, 'admin@mi-tienda.test',
-         '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- "admin123"
+         '$2a$10$jdtn0ciVAzQW0x12ijCKqeelxd3JeQtTlVrBO.Bk76U7Bc7.ZsA4e', -- "admin123"
          'admin'
     FROM tenants WHERE slug = 'mi-tienda';
 ```

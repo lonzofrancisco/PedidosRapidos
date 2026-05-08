@@ -29,7 +29,7 @@ BEGIN
   VALUES (
     v_tenant_id,
     'admin@burger-demo.test',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2a$10$jdtn0ciVAzQW0x12ijCKqeelxd3JeQtTlVrBO.Bk76U7Bc7.ZsA4e',
     'admin'
   ) ON CONFLICT DO NOTHING;
 
