@@ -16,7 +16,13 @@ CREATE TABLE IF NOT EXISTS tenants (
   name            TEXT NOT NULL,
   whatsapp_number TEXT NOT NULL,        -- formato internacional sin '+', ej: 5491112345678
   currency        TEXT NOT NULL DEFAULT 'ARS',
+  image_url       TEXT,                 -- logo o foto de la tienda (URL publica)
   active          BOOLEAN NOT NULL DEFAULT TRUE,
+  -- Plan / suscripcion
+  plan_status     TEXT NOT NULL DEFAULT 'trial'
+                    CHECK (plan_status IN ('trial','active','expired')),
+  trial_ends_at   TIMESTAMPTZ,          -- cuando se acaba la prueba (NULL si plan pago)
+  paid_until      TIMESTAMPTZ,          -- hasta cuando pago (NULL si esta en trial)
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

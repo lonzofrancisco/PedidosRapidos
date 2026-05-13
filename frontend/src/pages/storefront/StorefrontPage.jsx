@@ -34,10 +34,20 @@ export default function StorefrontPage() {
   return (
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{data.tenant.name}</h1>
-            <p className="text-xs text-slate-500">@{data.tenant.slug}</p>
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {data.tenant.image_url && (
+              <img
+                src={data.tenant.image_url}
+                alt={data.tenant.name}
+                className="h-10 w-10 rounded-full object-cover border border-slate-200 flex-shrink-0"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold truncate">{data.tenant.name}</h1>
+              <p className="text-xs text-slate-500 truncate">@{data.tenant.slug}</p>
+            </div>
           </div>
           <button
             type="button"

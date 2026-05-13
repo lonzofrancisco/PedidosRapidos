@@ -31,11 +31,26 @@ export default function HomePage() {
           <button type="submit" className="btn-primary w-full">Entrar</button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-slate-200 text-sm text-slate-600">
-          Eres administrador?{' '}
-          <Link to="/admin/login" className="text-brand-600 font-medium hover:underline">
-            Inicia sesion aqui
-          </Link>
+        <div className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-sm text-slate-600">
+          <div className="rounded-lg bg-brand-50 border border-brand-100 p-3">
+            <p className="font-medium text-slate-800">¿Querés crear tu tienda?</p>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Probá <strong>15 días gratis</strong>. Sin tarjeta.
+            </p>
+            <Link
+              to="/signup"
+              className="btn-primary w-full mt-3 inline-flex justify-center"
+            >
+              Crear mi tienda
+            </Link>
+          </div>
+
+          <div className="text-center">
+            ¿Eres administrador?{' '}
+            <Link to="/admin/login" className="text-brand-600 font-medium hover:underline">
+              Iniciá sesión
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { query } from '../config/db.js';
-import { notFound } from '../utils/httpError.js';
+import { notFound, forbidden } from '../utils/httpError.js';
+import { computePlanInfo } from '../utils/plan.js';
 
 /**
  * Resuelve el tenant a partir de:
@@ -15,13 +16,20 @@ export async function resolveTenantBySlug(req, res, next) {
     if (!slug) return next(notFound('Tenant slug requerido'));
 
     const { rows } = await query(
-      `SELECT id, slug, name, whatsapp_number, currency, active
+      `SELECT id, slug, name, whatsapp_number, currency, image_url, active,
+              plan_status, trial_ends_at, paid_until
          FROM tenants
         WHERE slug = $1`,
       [slug]
     );
     const tenant = rows[0];
     if (!tenant || !tenant.active) return next(notFound('Tenant no encontrado'));
+
+    // Si el plan expiro, la tienda publica deja de responder.
+    const plan = computePlanInfo(tenant);
+    if (plan.isExpired) {
+      return next(forbidden('Esta tienda esta temporalmente inactiva.'));
+    }
 
     req.tenant = tenant;
     req.tenantId = tenant.id;

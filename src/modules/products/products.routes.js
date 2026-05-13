@@ -53,7 +53,15 @@ publicProductsRouter.get(
   '/',
   asyncHandler(async (req, res) => {
     const products = await service.listProducts(req.tenantId, { onlyActive: true });
-    res.json({ tenant: { slug: req.tenant.slug, name: req.tenant.name, currency: req.tenant.currency }, products });
+    res.json({
+      tenant: {
+        slug: req.tenant.slug,
+        name: req.tenant.name,
+        currency: req.tenant.currency,
+        image_url: req.tenant.image_url,
+      },
+      products,
+    });
   })
 );
 
