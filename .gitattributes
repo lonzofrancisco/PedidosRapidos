@@ -1,0 +1,8 @@
+# Forzar LF en archivos que se ejecutan en Linux. Sin esto, si commiteas
+# desde Windows con autocrlf, el bash de la VM se rompe leyendo \r.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+Caddyfile   text eol=lf
+nginx.conf  text eol=lf

@@ -1,0 +1,94 @@
+# =====================================================================
+# Stack de produccion: Caddy (HTTPS auto via Let's Encrypt) -> nginx (SPA)
+# -> Node API -> Postgres. Pensado para correr en una VM detras de un
+# dominio publico (Oracle Cloud Always Free + DuckDNS, por ejemplo).
+#
+# Levantar:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# =====================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pedidos_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pedidos_pgdata:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+    # NO 'ports': la DB solo es accesible desde la red interna del compose.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: pedidos_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      PUBLIC_BASE_URL: https://${DOMAIN}
+      UPLOAD_DIR: /app/uploads
+      CORS_ORIGIN: https://${DOMAIN}
+    volumes:
+      - pedidos_uploads:/app/uploads
+    # No expone puertos: Caddy/web hablan con ella por la red interna.
+
+  web:
+    build: ./frontend
+    container_name: pedidos_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - pedidos_uploads:/usr/share/nginx/html/uploads:ro
+    # Sin puertos: solo Caddy le habla.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: pedidos_caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  adminer:
+    image: adminer:4.8.1-standalone
+    container_name: pedidos_adminer
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: dracula
+    # Solo expuesto al loopback de la VM: accedes con
+    #   ssh -L 8081:localhost:8081 ubuntu@<tu-ip>
+    # y abris http://localhost:8081 en tu maquina.
+    ports:
+      - "127.0.0.1:8081:8080"
+
+volumes:
+  pedidos_pgdata:
+  pedidos_uploads:
+  caddy_data:
+  caddy_config:

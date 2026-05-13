@@ -1,0 +1,12 @@
+# Caddy obtiene cert de Let's Encrypt automaticamente con el primer request.
+# El dominio se inyecta via env DOMAIN desde docker-compose.prod.yml.
+{$DOMAIN} {
+  encode gzip
+  reverse_proxy web:80
+
+  # Logs estructurados a stderr (los lee 'docker logs pedidos_caddy').
+  log {
+    output stderr
+    format console
+  }
+}
