@@ -24,7 +24,7 @@ import { buildWhatsappLink } from '../../utils/whatsapp.js';
  *   ]
  * }
  */
-export async function createOrder(tenant, payload) {
+export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
   if (!payload.items?.length) throw badRequest('El carrito esta vacio');
 
   // Normaliza el item a una lista de selecciones {option_id, quantity}.
@@ -202,8 +202,11 @@ export async function createOrder(tenant, payload) {
     return { ...orderRow, items: computedItems };
   });
 
-  const whatsappUrl = buildWhatsappLink({ tenant, order, items: computedItems });
-  return { order, whatsappUrl };
+  const orderUrl = publicBaseUrl
+    ? `${publicBaseUrl.replace(/\/+$/, '')}/t/${tenant.slug}/orders/${order.id}`
+    : null;
+  const whatsappUrl = buildWhatsappLink({ tenant, order, orderUrl });
+  return { order, whatsappUrl, orderUrl };
 }
 
 export async function getOrder(tenantId, orderId) {

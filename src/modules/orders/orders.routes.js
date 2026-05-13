@@ -4,7 +4,16 @@ import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { resolveTenantBySlug, requireTenantContext } from '../../middleware/tenant.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
+import { env } from '../../config/env.js';
 import * as service from './orders.service.js';
+
+// URL publica con la que se construye el link al detalle del pedido en el
+// mensaje de WhatsApp. Si hay PUBLIC_BASE_URL la usamos siempre; sino la
+// derivamos del request (Host + X-Forwarded-Proto via 'trust proxy').
+function resolvePublicBaseUrl(req) {
+  if (env.publicBaseUrl) return env.publicBaseUrl;
+  return `${req.protocol}://${req.get('host')}`;
+}
 
 // ---------- Schemas ----------------------------------------------------
 const createOrderSchema = z.object({
@@ -43,7 +52,8 @@ publicOrdersRouter.post(
   '/',
   validate({ body: createOrderSchema }),
   asyncHandler(async (req, res) => {
-    const result = await service.createOrder(req.tenant, req.body);
+    const publicBaseUrl = resolvePublicBaseUrl(req);
+    const result = await service.createOrder(req.tenant, req.body, { publicBaseUrl });
     res.status(201).json(result);
   })
 );

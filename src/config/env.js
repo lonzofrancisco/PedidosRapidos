@@ -14,4 +14,8 @@ export const env = {
   databaseUrl: required('DATABASE_URL'),
   jwtSecret: required('JWT_SECRET', 'change-me-in-prod'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '12h',
+  // URL publica del frontend (sin trailing slash). Si esta seteada, se usa
+  // para armar el link al detalle del pedido en el mensaje de WhatsApp.
+  // Si no, se deriva del Host del request entrante.
+  publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
 };

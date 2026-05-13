@@ -16,7 +16,7 @@ DECLARE
 BEGIN
   -- Tenant demo
   INSERT INTO tenants (slug, name, whatsapp_number, currency)
-  VALUES ('burger-demo', 'Burger Demo', '5215512345678', 'MXN')
+  VALUES ('burger-demo', 'Burger Demo', '5215512345678', 'ARS')
   ON CONFLICT (slug) DO NOTHING
   RETURNING id INTO v_tenant_id;
 

@@ -31,6 +31,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-pedidos}:${POSTGRES_PASSWORD:-pedidos}@db:5432/${POSTGRES_DB:-pedidos}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-prod}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
     ports:
       - "${API_PORT:-3000}:3000"
 
@@ -42,6 +43,18 @@ services:
       - api
     ports:
       - "${WEB_PORT:-8080}:80"
+
+  adminer:
+    image: adminer:4.8.1-standalone
+    container_name: pedidos_adminer
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: dracula
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
 
 volumes:
   pedidos_pgdata:

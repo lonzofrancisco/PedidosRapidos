@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug            TEXT NOT NULL UNIQUE,
   name            TEXT NOT NULL,
-  whatsapp_number TEXT NOT NULL,        -- formato internacional sin '+', ej: 5215512345678
-  currency        TEXT NOT NULL DEFAULT 'MXN',
+  whatsapp_number TEXT NOT NULL,        -- formato internacional sin '+', ej: 5491112345678
+  currency        TEXT NOT NULL DEFAULT 'ARS',
   active          BOOLEAN NOT NULL DEFAULT TRUE,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status           TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending','confirmed','preparing','ready','delivered','cancelled')),
   total            NUMERIC(12,2) NOT NULL CHECK (total >= 0),
-  currency         TEXT NOT NULL DEFAULT 'MXN',
+  currency         TEXT NOT NULL DEFAULT 'ARS',
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (tenant_id, short_code)
 );

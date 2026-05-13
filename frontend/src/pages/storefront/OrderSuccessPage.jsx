@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { ordersApi } from '../../api/orders.js';
 import { formatMoney, formatDate } from '../../utils/format.js';
@@ -20,10 +20,21 @@ export default function OrderSuccessPage() {
 
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
+  const autoSentRef = useRef(false);
 
   useEffect(() => {
     ordersApi.getPublic(slug, orderId).then(setOrder).catch((e) => setError(e.message));
   }, [slug, orderId]);
+
+  // Al volver del checkout: abrir WhatsApp automaticamente con el mensaje
+  // corto al numero de la tienda. El usuario solo confirma "Enviar" en su app.
+  // El ref evita que un re-render dispare el redirect de nuevo si vuelve atras.
+  useEffect(() => {
+    if (justCreated && initialWhatsapp && !autoSentRef.current) {
+      autoSentRef.current = true;
+      window.location.href = initialWhatsapp;
+    }
+  }, [justCreated, initialWhatsapp]);
 
   if (error) return <Center>{error}</Center>;
   if (!order) return <Center>Cargando...</Center>;

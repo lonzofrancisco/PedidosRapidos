@@ -69,7 +69,18 @@ docker compose up --build
 
 - **Frontend (storefront + admin):** `http://localhost:8080`
 - **API:** `http://localhost:3000` (proxy desde nginx tambien expuesto en `/api/`)
+- **Adminer (UI para SQL):** `http://localhost:8081`
 - **Healthcheck:** `GET http://localhost:3000/api/v1/health`
+
+### Adminer (consola SQL)
+
+`http://localhost:8081`. Login:
+
+- Sistema: `PostgreSQL`
+- Servidor: `db` (ya viene precargado)
+- Usuario / contraseña / base: los de `.env` (default `pedidos` / `pedidos` / `pedidos`)
+
+Desde ahi podes correr SELECTs, ver tablas (`tenants`, `products`, `orders`, etc.), editar filas y ejecutar SQL arbitrario.
 
 Postgres carga `db/*.sql` solo en la primera creacion del volumen, asi que el tenant demo y el admin se crean automaticamente.
 
@@ -168,7 +179,7 @@ Respuesta (recortada):
 
 ```json
 {
-  "tenant": { "slug": "burger-demo", "name": "Burger Demo", "currency": "MXN" },
+  "tenant": { "slug": "burger-demo", "name": "Burger Demo", "currency": "ARS" },
   "products": [
     {
       "id": "PRODUCT_UUID",
@@ -234,7 +245,7 @@ Respuesta:
     "short_code": "K7HQ29",
     "status": "pending",
     "total": "340.00",
-    "currency": "MXN",
+    "currency": "ARS",
     "items": [
       {
         "product_name": "Hamburguesa Clasica",

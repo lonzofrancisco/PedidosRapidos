@@ -1,42 +1,14 @@
 /**
- * Construye un deeplink wa.me con el resumen del pedido para que el cliente
- * lo envie al numero del tenant.
+ * Construye un deeplink wa.me con un mensaje corto desde el cliente hacia la
+ * tienda. La tienda abre la URL del pedido para ver el detalle completo.
  *
- * Formato del numero: codigo de pais + numero, sin '+' ni espacios.
+ * Formato del numero del tenant: codigo de pais + numero, sin '+' ni espacios.
  *   ej: "5215512345678"
  */
-export function buildWhatsappLink({ tenant, order, items }) {
-  const lines = [];
-  lines.push(`*Nuevo pedido #${order.short_code}* - ${tenant.name}`);
-  lines.push('');
-  lines.push(`Cliente: ${order.customer_name}`);
-  lines.push(`Telefono: ${order.customer_phone}`);
-  if (order.customer_address) lines.push(`Direccion: ${order.customer_address}`);
-  lines.push('');
-  lines.push('*Pedido:*');
-
-  for (const item of items) {
-    lines.push(`${item.quantity}x ${item.product_name} - ${formatMoney(item.subtotal, order.currency)}`);
-    for (const opt of item.options ?? []) {
-      // Para grupos quantity la cantidad puede ser >1, mostrarla cuando aplique.
-      const qtyPrefix = (opt.quantity ?? 1) > 1 ? `${opt.quantity}x ` : '';
-      lines.push(`  - ${opt.group_name}: ${qtyPrefix}${opt.option_name}`);
-    }
-    if (item.notes) lines.push(`  _Nota: ${item.notes}_`);
-  }
-
-  lines.push('');
-  lines.push(`*Total: ${formatMoney(order.total, order.currency)}*`);
-  if (order.notes) {
-    lines.push('');
-    lines.push(`Notas: ${order.notes}`);
-  }
+export function buildWhatsappLink({ tenant, order, orderUrl }) {
+  const lines = [`Hola! Te paso mi pedido Numero ${order.short_code}`];
+  if (orderUrl) lines.push(`Este es mi pedido: ${orderUrl}`);
 
   const text = encodeURIComponent(lines.join('\n'));
   return `https://wa.me/${tenant.whatsapp_number}?text=${text}`;
-}
-
-function formatMoney(amount, currency = 'MXN') {
-  const n = Number(amount);
-  return `${currency} ${n.toFixed(2)}`;
 }

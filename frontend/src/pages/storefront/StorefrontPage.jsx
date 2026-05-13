@@ -29,7 +29,7 @@ export default function StorefrontPage() {
   if (loading) return <CenterMsg>Cargando catalogo...</CenterMsg>;
   if (error)   return <CenterMsg>{error}</CenterMsg>;
 
-  const currency = data?.tenant?.currency ?? 'MXN';
+  const currency = data?.tenant?.currency ?? 'ARS';
 
   return (
     <div className="min-h-screen pb-24">
