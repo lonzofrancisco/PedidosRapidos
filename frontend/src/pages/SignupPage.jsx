@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signupApi } from '../api/signup.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { isEmail, isWhatsapp } from '../utils/validate.js';
 
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const TRIAL_DAYS = 15;
@@ -49,6 +50,14 @@ export default function SignupPage() {
 
     if (!slugRegex.test(form.slug)) {
       setError('El slug solo admite minusculas, numeros y guiones (no al principio/fin).');
+      return;
+    }
+    if (!isWhatsapp(form.whatsapp_number)) {
+      setError('El WhatsApp debe tener codigo de pais, solo numeros (8 a 15 digitos). Ej: 5491112345678');
+      return;
+    }
+    if (!isEmail(form.admin_email)) {
+      setError('Ingresá un email valido.');
       return;
     }
     if (form.admin_password.length < 8) {
@@ -128,7 +137,9 @@ export default function SignupPage() {
             <input className="input" required type="password" value={form.admin_password} onChange={set('admin_password')} minLength={8} />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+            {error || ' '}
+          </p>
 
           <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
             {submitting ? 'Creando...' : 'Crear mi tienda gratis'}

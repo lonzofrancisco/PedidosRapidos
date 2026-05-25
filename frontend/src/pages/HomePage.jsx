@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
-  const [slug, setSlug] = useState('burger-demo');
+  const [slug, setSlug] = useState('');
   const navigate = useNavigate();
 
   const onSubmit = (e) => {

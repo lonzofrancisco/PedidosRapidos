@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart.js';
 import { ordersApi } from '../../api/orders.js';
 import { formatMoney } from '../../utils/format.js';
+import { isPhone } from '../../utils/validate.js';
 
 export default function CheckoutPage() {
   const { slug } = useParams();
@@ -24,8 +25,12 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+    if (!isPhone(form.phone)) {
+      setError('Ingresá un telefono valido (con codigo de pais). Ej: 5491112345678');
+      return;
+    }
+    setSubmitting(true);
     try {
       const payload = {
         customer: {
@@ -92,7 +97,9 @@ export default function CheckoutPage() {
                       onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+            {error || ' '}
+          </p>
 
           <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
             {submitting ? 'Enviando...' : 'Confirmar pedido'}

@@ -56,13 +56,15 @@ function PlanBanner({ tenant }) {
 export default function SettingsPage() {
   const { token } = useAuth();
   const [tenant, setTenant] = useState(null);
-  const [form, setForm] = useState({ name: '', whatsapp_number: '', image_url: '' });
+  const [form, setForm] = useState({ name: '', whatsapp_number: '', image_url: '', background_url: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const fileRef = useRef(null);
+  const bgFileRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -73,6 +75,7 @@ export default function SettingsPage() {
         name: data.name ?? '',
         whatsapp_number: data.whatsapp_number ?? '',
         image_url: data.image_url ?? '',
+        background_url: data.background_url ?? '',
       });
     } catch (err) {
       setError(err.message);
@@ -93,6 +96,7 @@ export default function SettingsPage() {
         name: form.name,
         whatsapp_number: form.whatsapp_number,
         image_url: form.image_url || null,
+        background_url: form.background_url || null,
       };
       const updated = await tenantApi.update(token, patch);
       setTenant(updated);
@@ -139,6 +143,48 @@ export default function SettingsPage() {
       setTenant(updated);
       setForm((f) => ({ ...f, image_url: '' }));
       setMessage('Imagen eliminada.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onPickBg = () => bgFileRef.current?.click();
+
+  const onBgFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reseleccionar el mismo archivo
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen de fondo excede 5 MB.');
+      return;
+    }
+    setUploadingBg(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const { tenant: updated } = await tenantApi.uploadBackground(token, file);
+      setTenant(updated);
+      setForm((f) => ({ ...f, background_url: updated.background_url ?? '' }));
+      setMessage('Fondo actualizado.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
+  const onRemoveBackground = async () => {
+    if (!confirm('Quitar el fondo de la tienda?')) return;
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const updated = await tenantApi.update(token, { background_url: null });
+      setTenant(updated);
+      setForm((f) => ({ ...f, background_url: '' }));
+      setMessage('Fondo eliminado.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -209,6 +255,58 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* Fondo de la tienda */}
+        <div className="pt-2 border-t border-slate-100">
+          <label className="label">Fondo de la tienda</label>
+          <div className="mt-2 relative h-28 w-full rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+            {form.background_url ? (
+              <>
+                <img
+                  src={form.background_url}
+                  alt="Fondo"
+                  className="absolute inset-0 h-full w-full object-cover blur-sm scale-105"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-white/40" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded-lg bg-white shadow px-3 py-2 text-xs text-slate-600">
+                    Así resaltan tus productos
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+                sin fondo
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-2">
+            <button type="button" className="btn-secondary" disabled={uploadingBg} onClick={onPickBg}>
+              {uploadingBg ? 'Subiendo...' : 'Subir fondo'}
+            </button>
+            {form.background_url && (
+              <button
+                type="button"
+                className="text-xs text-red-600 hover:underline"
+                onClick={onRemoveBackground}
+                disabled={saving}
+              >
+                Quitar fondo
+              </button>
+            )}
+            <input
+              ref={bgFileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={onBgFileChange}
+            />
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            Se muestra difuminado detrás de tus productos. JPG, PNG, WEBP o GIF. Máximo 5 MB.
+          </p>
+        </div>
+
         {/* Datos basicos */}
         <form onSubmit={onSave} className="space-y-4 pt-2 border-t border-slate-100">
           <div>
@@ -240,8 +338,12 @@ export default function SettingsPage() {
             <p><strong>Moneda:</strong> {tenant?.currency}</p>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {message && <p className="text-sm text-emerald-700">{message}</p>}
+          <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+            {error || ' '}
+          </p>
+          <p className={`text-sm text-emerald-700 min-h-[1.25rem] ${message ? '' : 'invisible'}`}>
+            {message || ' '}
+          </p>
 
           <button type="submit" className="btn-primary" disabled={saving}>
             {saving ? 'Guardando...' : 'Guardar cambios'}

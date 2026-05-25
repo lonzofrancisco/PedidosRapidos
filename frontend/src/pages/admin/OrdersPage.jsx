@@ -59,7 +59,9 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      <p className={`text-sm text-red-600 mb-3 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+        {error || ' '}
+      </p>
 
       <div className="card overflow-hidden">
         <table className="w-full text-sm">

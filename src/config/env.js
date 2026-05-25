@@ -10,6 +10,8 @@ const required = (key, fallback) => {
 
 const PLACEHOLDER_SECRETS = new Set(['change-me-in-prod', 'changeme', 'secret']);
 
+const DEFAULT_SUPERADMIN_PASSWORD = 'superadmin123';
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
@@ -23,11 +25,25 @@ export const env = {
   // Origenes permitidos para CORS, separados por coma. Vacio = allow-all
   // (solo en dev). En produccion la prod docker-compose lo setea al dominio.
   corsOrigin: process.env.CORS_ORIGIN ?? '',
+  // ---- Super admin (dueno del sistema, no es un tenant) ----------------
+  // Credenciales unicas para entrar a /superAdmin. Login con email+password,
+  // emite un JWT con scope 'superadmin'. Cambiar SIEMPRE en produccion.
+  superadminEmail: process.env.SUPERADMIN_EMAIL ?? 'owner@pedidos.local',
+  superadminPassword: process.env.SUPERADMIN_PASSWORD ?? DEFAULT_SUPERADMIN_PASSWORD,
+  // Tiempo de vida del token de superadmin (mas corto que el de tenant).
+  superadminJwtExpiresIn: process.env.SUPERADMIN_JWT_EXPIRES_IN ?? '8h',
 };
 
 // Fail-fast si en produccion arrancamos con el secret placeholder.
 if (env.nodeEnv === 'production' && PLACEHOLDER_SECRETS.has(env.jwtSecret)) {
   throw new Error(
     'JWT_SECRET tiene el valor por defecto. Generá uno con `openssl rand -hex 32` antes de levantar en producción.'
+  );
+}
+
+// Fail-fast si en produccion el superadmin quedo con la password por defecto.
+if (env.nodeEnv === 'production' && env.superadminPassword === DEFAULT_SUPERADMIN_PASSWORD) {
+  throw new Error(
+    'SUPERADMIN_PASSWORD tiene el valor por defecto. Definí SUPERADMIN_EMAIL y SUPERADMIN_PASSWORD antes de levantar en producción.'
   );
 }

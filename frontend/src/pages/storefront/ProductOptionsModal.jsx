@@ -19,6 +19,12 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
+  // Galeria: usa image_urls; cae a image_url historico si no hay galeria.
+  const images = product.image_urls?.length
+    ? product.image_urls
+    : (product.image_url ? [product.image_url] : []);
+  const [activeImage, setActiveImage] = useState(0);
+
   const optionsTotal = useMemo(() => {
     let total = 0;
     for (const group of product.option_groups ?? []) {
@@ -103,8 +109,8 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
   };
 
   return (
-    <div className="fixed inset-0 z-20 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-20 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col animate-slide-up">
         <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between">
           <div>
             <h2 className="text-lg font-bold">{product.name}</h2>
@@ -116,6 +122,36 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1">
+          {images.length > 0 && (
+            <div>
+              <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100">
+                <img
+                  src={images[activeImage] ?? images[0]}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+              {images.length > 1 && (
+                <div className="flex gap-2 mt-2 overflow-x-auto">
+                  {images.map((url, i) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setActiveImage(i)}
+                      className={`h-14 w-14 shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                        i === activeImage ? 'border-brand-500' : 'border-transparent opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={url} alt={`${product.name} ${i + 1}`} className="h-full w-full object-cover"
+                           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {(product.option_groups ?? []).map(group => {
             const sels = selected[group.id] ?? new Map();
             const sumQty = totalQty(sels);
@@ -205,13 +241,15 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Sin cebolla, termino bien cocido, etc."
+              placeholder="Deje sus indicaciones aquí.."
             />
           </div>
         </div>
 
         <div className="border-t border-slate-200 px-5 py-4 space-y-3">
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+            {error || ' '}
+          </p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button type="button" className="btn-secondary px-3"

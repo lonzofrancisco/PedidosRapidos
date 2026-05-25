@@ -1,19 +1,10 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { authApi } from '../../api/auth.js';
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
+import { superadminApi, setSuperSession } from '../../api/superadmin.js';
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function SuperAdminLoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/admin';
-
-  const [form, setForm] = useState({
-    tenant_slug: '',
-    email: '',
-    password: '',
-  });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,9 +13,9 @@ export default function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await authApi.login(form);
-      login(result);
-      navigate(from, { replace: true });
+      const result = await superadminApi.login(form.email, form.password);
+      setSuperSession(result);
+      navigate('/superAdmin', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -33,21 +24,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-900">
       <form onSubmit={onSubmit} className="card w-full max-w-md p-8 space-y-4">
-        <h1 className="text-2xl font-bold">Panel admin</h1>
-        <p className="text-sm text-slate-600">Ingresa con tus credenciales de tienda.</p>
-
         <div>
-          <label className="label">Slug de tienda</label>
-          <input className="input" value={form.tenant_slug} required autoComplete="off"
-                 placeholder="mi-tienda"
-                 onChange={(e) => setForm({ ...form, tenant_slug: e.target.value })} />
+          <h1 className="text-2xl font-bold">Panel del sistema</h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Acceso exclusivo del dueno. Gestiona clientes, planes y vencimientos.
+          </p>
         </div>
+
         <div>
           <label className="label">Email</label>
           <input className="input" type="email" value={form.email} required autoComplete="email"
-                 placeholder="vos@tu-tienda.com"
+                 placeholder="owner@pedidos.local"
                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
         </div>
         <div>
@@ -63,10 +52,6 @@ export default function LoginPage() {
         <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
-
-        <div className="pt-3 border-t border-slate-200 text-sm text-center">
-          <Link to="/" className="text-slate-500 hover:text-slate-700">&larr; Volver al inicio</Link>
-        </div>
       </form>
     </div>
   );

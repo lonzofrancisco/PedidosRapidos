@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { resolveTenantBySlug, requireTenantContext } from '../../middleware/tenant.js';
+import { resolveTenantBySlug, requireTenantContext, requirePlanActive } from '../../middleware/tenant.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import { env } from '../../config/env.js';
 import * as service from './orders.service.js';
@@ -72,7 +72,7 @@ publicOrdersRouter.get(
 // Montado en: /api/v1/admin/orders
 export const adminOrdersRouter = Router();
 
-adminOrdersRouter.use(requireAuth, requireRole('admin'), requireTenantContext);
+adminOrdersRouter.use(requireAuth, requireRole('admin'), requireTenantContext, requirePlanActive);
 
 adminOrdersRouter.get(
   '/',

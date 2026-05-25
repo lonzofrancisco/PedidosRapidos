@@ -4,6 +4,7 @@ import { publicProductsRouter, adminProductsRouter } from './modules/products/pr
 import { publicOrdersRouter, adminOrdersRouter } from './modules/orders/orders.routes.js';
 import { adminTenantRouter } from './modules/tenants/tenants.routes.js';
 import { signupRouter } from './modules/signup/signup.routes.js';
+import superadminRouter from './modules/superadmin/superadmin.routes.js';
 
 const router = Router();
 
@@ -13,6 +14,10 @@ router.get('/health', (req, res) => res.json({ status: 'ok' }));
 // ---------- Auth -------------------------------------------------------
 router.use('/auth',   authRouter);
 router.use('/signup', signupRouter);
+
+// ---------- Super admin (dueno del sistema) ---------------------------
+// /api/v1/superadmin/login  + endpoints protegidos por requireSuperAdmin
+router.use('/superadmin', superadminRouter);
 
 // ---------- Storefront publico (por tenant slug) ----------------------
 // /api/v1/t/:tenantSlug/products

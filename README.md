@@ -11,6 +11,47 @@ Backend Node.js + Express + PostgreSQL y frontend React + Vite, listos para corr
 
 ---
 
+## Instalacion en una laptop nueva (1 comando)
+
+**Unico requisito:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y arrancado.
+
+### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/lonzofrancisco/PedidosRapidos.git
+cd PedidosRapidos
+.\install.ps1
+```
+
+Si PowerShell bloquea el script: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (una sola vez).
+
+### Linux / macOS / WSL
+
+```bash
+git clone https://github.com/lonzofrancisco/PedidosRapidos.git
+cd PedidosRapidos
+bash install.sh
+```
+
+El script:
+1. Verifica que Docker este instalado y corriendo.
+2. Copia `.env.example` a `.env` si no existe (los defaults sirven para dev local).
+3. Levanta `db + api + web + adminer` con `docker compose up -d --build`.
+4. Espera a que la API responda y te imprime las URLs.
+
+URLs finales:
+- Tienda + Admin: <http://localhost:8080>
+- API:            <http://localhost:3000>
+- Adminer:        <http://localhost:8081>
+- Demo storefront: <http://localhost:8080/t/burger-demo>
+- Demo admin login: `admin@burger-demo.test` / `admin123` (tenant `burger-demo`)
+
+Flags:
+- `.\install.ps1 -Reset` / `bash install.sh --reset` -> `docker compose down -v` antes de levantar (**BORRA la base**).
+- `.\install.ps1 -Rebuild` / `bash install.sh --rebuild` -> rebuild sin cache.
+
+---
+
 ## Estructura
 
 ```

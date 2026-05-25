@@ -2,7 +2,7 @@ import { query } from '../../config/db.js';
 import { notFound } from '../../utils/httpError.js';
 
 const TENANT_COLUMNS = `
-  id, slug, name, whatsapp_number, currency, image_url, active,
+  id, slug, name, whatsapp_number, currency, image_url, background_url, active,
   plan_status, trial_ends_at, paid_until, created_at
 `;
 
@@ -15,7 +15,7 @@ export async function getTenant(tenantId) {
   return rows[0];
 }
 
-const UPDATABLE_FIELDS = ['name', 'whatsapp_number', 'image_url'];
+const UPDATABLE_FIELDS = ['name', 'whatsapp_number', 'image_url', 'background_url'];
 
 export async function updateTenant(tenantId, patch) {
   const fields = [];

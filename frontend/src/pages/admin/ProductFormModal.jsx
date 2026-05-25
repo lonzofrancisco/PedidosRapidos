@@ -1,6 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { productsApi } from '../../api/products.js';
+
+const MAX_IMAGES = 8;
+
+// Tipos de grupo en lenguaje claro para el comerciante. `value` es lo que
+// entiende el backend (single|multi|quantity); el resto es solo UI.
+const TYPE_OPTIONS = [
+  { value: 'single',   title: 'Elegí una',           hint: 'El cliente elige una sola. Ej: tamaño, color, voltaje.' },
+  { value: 'multi',    title: 'Elegí varias',        hint: 'Puede elegir varias. Ej: extras, accesorios.' },
+  { value: 'quantity', title: 'Cantidad por opción', hint: 'Pone una cantidad por cada opción. Ej: docena surtida, cantidad por medida.' },
+];
 
 /**
  * Crea o edita un producto (campos basicos + grupos de opciones).
@@ -21,15 +31,66 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
     name: product?.name ?? '',
     description: product?.description ?? '',
     price: product?.price ?? '',
-    image_url: product?.image_url ?? '',
+    // Galeria: la primera imagen es la portada. Productos viejos pueden venir
+    // solo con image_url -> lo metemos como primera de la galeria.
+    image_urls: product?.image_urls ?? (product?.image_url ? [product.image_url] : []),
     active: product?.active ?? true,
   });
 
   const [groups, setGroups] = useState(() => normalizeGroups(product?.option_groups));
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const fileRef = useRef(null);
 
   const updateField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const onPickFile = () => fileRef.current?.click();
+
+  const onFilesChange = async (e) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ''; // permite reseleccionar los mismos archivos
+    if (files.length === 0) return;
+
+    const room = MAX_IMAGES - form.image_urls.length;
+    if (room <= 0) {
+      setError(`Máximo ${MAX_IMAGES} imágenes por producto.`);
+      return;
+    }
+    const toUpload = files.slice(0, room);
+    if (toUpload.some(f => f.size > 2 * 1024 * 1024)) {
+      setError('Cada imagen debe pesar menos de 2 MB.');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    try {
+      const uploaded = [];
+      for (const file of toUpload) {
+        const { image_url } = await productsApi.uploadImage(token, file);
+        uploaded.push(image_url);
+      }
+      setForm(f => ({ ...f, image_urls: [...f.image_urls, ...uploaded] }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImageAt = (idx) =>
+    setForm(f => ({ ...f, image_urls: f.image_urls.filter((_, i) => i !== idx) }));
+
+  // Reordena la galeria (dir = -1 izquierda, +1 derecha). La primera = portada.
+  const moveImage = (idx, dir) =>
+    setForm(f => {
+      const j = idx + dir;
+      if (j < 0 || j >= f.image_urls.length) return f;
+      const next = [...f.image_urls];
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return { ...f, image_urls: next };
+    });
 
   const addGroup = () => setGroups(gs => [...gs, {
     id: undefined, name: '', type: 'single', required: false, min_select: 0, max_select: 1, options: [],
@@ -79,7 +140,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
         name: form.name,
         description: form.description || undefined,
         price: Number(form.price),
-        image_url: form.image_url || undefined,
+        image_urls: form.image_urls,
         active: form.active,
         option_groups: serializeGroups(groups),
       };
@@ -136,9 +197,55 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                       onChange={(e) => updateField('description', e.target.value)} />
           </div>
           <div>
-            <label className="label">URL de imagen</label>
-            <input className="input" type="url" value={form.image_url}
-                   onChange={(e) => updateField('image_url', e.target.value)} />
+            <div className="flex items-center justify-between">
+              <label className="label">Imágenes</label>
+              <span className="text-xs text-slate-400">{form.image_urls.length}/{MAX_IMAGES}</span>
+            </div>
+
+            {form.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
+                {form.image_urls.map((url, idx) => (
+                  <div key={url} className="relative aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+                    <img src={url} alt={`Imagen ${idx + 1}`} className="h-full w-full object-cover"
+                         onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    {idx === 0 && (
+                      <span className="absolute top-1 left-1 badge bg-brand-600 text-white text-[10px] px-1.5 py-0.5">Portada</span>
+                    )}
+                    <button type="button" onClick={() => removeImageAt(idx)}
+                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white text-xs leading-none flex items-center justify-center hover:bg-black/80"
+                            aria-label="Quitar imagen">&times;</button>
+                    <div className="absolute bottom-1 inset-x-1 flex justify-between">
+                      <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0}
+                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30"
+                              aria-label="Mover a la izquierda">&lsaquo;</button>
+                      <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === form.image_urls.length - 1}
+                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30"
+                              aria-label="Mover a la derecha">&rsaquo;</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn-secondary mt-2"
+              disabled={uploading || form.image_urls.length >= MAX_IMAGES}
+              onClick={onPickFile}
+            >
+              {uploading ? 'Subiendo...' : (form.image_urls.length > 0 ? '+ Agregar imágenes' : 'Subir imágenes')}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+              onChange={onFilesChange}
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              JPG, PNG, WEBP o GIF. Máximo 2 MB cada una. La primera es la portada (usá las flechas para reordenar).
+            </p>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.active}
@@ -148,31 +255,51 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
 
           <div className="border-t border-slate-200 pt-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">Grupos de opciones (cards)</h3>
-              <button type="button" onClick={addGroup} className="btn-secondary text-xs">+ Grupo</button>
+              <h3 className="font-semibold text-sm">Opciones del producto</h3>
+              <button type="button" onClick={addGroup} className="btn-secondary text-xs">+ Agregar card</button>
             </div>
 
             {groups.length === 0 && (
-              <p className="text-xs text-slate-500">Opcional. Agrega grupos como "Tamano" o "Extras".</p>
+              <p className="text-xs text-slate-500">
+                Opcional. Cada card es una elección que ve el cliente.
+                Ej: "Medida" o "Color" (ferretería), "Tamaño" o "Extras" (comida).
+              </p>
             )}
 
             <div className="space-y-3">
               {groups.map((g, gi) => (
                 <div key={g.id ?? `new-${gi}`} className="border border-slate-200 rounded-lg p-3 space-y-2">
-                  <div className="grid sm:grid-cols-3 gap-2">
-                    <input className="input" placeholder="Nombre del grupo *" required
+                  <div className="flex items-center gap-2">
+                    <input className="input flex-1" placeholder="Nombre de la card * (ej: Medida, Tamaño)" required
                            value={g.name} onChange={(e) => updateGroup(gi, { name: e.target.value })} />
-                    <select className="input" value={g.type}
-                            onChange={(e) => updateGroup(gi, { type: e.target.value })}>
-                      <option value="single">Single (radio)</option>
-                      <option value="multi">Multi (checkbox)</option>
-                      <option value="quantity">Cantidad por opcion (empanadas)</option>
-                    </select>
-                    <label className="flex items-center gap-1 text-xs">
+                    <label className="flex items-center gap-1 text-xs whitespace-nowrap">
                       <input type="checkbox" checked={g.required}
                              onChange={(e) => updateGroup(gi, { required: e.target.checked })} />
                       Obligatorio
                     </label>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium text-slate-600 mb-1">¿Cómo elige el cliente?</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {TYPE_OPTIONS.map(t => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => updateGroup(gi, { type: t.value })}
+                          className={`text-center rounded-lg border px-2 py-2 text-xs font-semibold transition ${
+                            g.type === t.value
+                              ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500'
+                              : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          {t.title}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {TYPE_OPTIONS.find(t => t.value === g.type)?.hint}
+                    </p>
                   </div>
                   {(g.type === 'multi' || g.type === 'quantity') && (
                     <div className="grid grid-cols-2 gap-2">
@@ -222,7 +349,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                       + Agregar opcion
                     </button>
                     <button type="button" onClick={() => removeGroup(gi)} className="text-xs text-red-600 hover:underline">
-                      Quitar grupo
+                      Quitar card
                     </button>
                   </div>
                 </div>
@@ -230,7 +357,9 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
+            {error || ' '}
+          </p>
         </div>
 
         <footer className="border-t border-slate-200 px-5 py-3 flex justify-end gap-2">

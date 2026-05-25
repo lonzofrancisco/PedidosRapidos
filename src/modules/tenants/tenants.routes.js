@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { requireTenantContext } from '../../middleware/tenant.js';
+import { requireTenantContext, requirePlanActive } from '../../middleware/tenant.js';
 import { badRequest } from '../../utils/httpError.js';
 import * as service from './tenants.service.js';
 
@@ -46,6 +46,19 @@ const upload = multer({
   },
 });
 
+// Igual que `upload` pero con limite mayor: una imagen de fondo pesa mas que
+// un logo, y como se muestra difuminada no necesita ser liviana al milimetro.
+const uploadBg = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    if (!MIME_TO_EXT[file.mimetype]) {
+      return cb(badRequest('Formato no permitido. Usa JPG, PNG, WEBP o GIF.'));
+    }
+    cb(null, true);
+  },
+});
+
 // ---------- Schemas ----------------------------------------------------
 const updateTenantSchema = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -53,6 +66,7 @@ const updateTenantSchema = z.object({
   // Acepta tanto URL absoluta como path relativo "/uploads/..." (el upload
   // local devuelve un path relativo).
   image_url: z.union([z.string().url(), z.string().startsWith('/uploads/'), z.null()]).optional(),
+  background_url: z.union([z.string().url(), z.string().startsWith('/uploads/'), z.null()]).optional(),
 });
 
 // ---------- Router -----------------------------------------------------
@@ -70,6 +84,7 @@ adminTenantRouter.get(
 
 adminTenantRouter.patch(
   '/',
+  requirePlanActive,
   validate({ body: updateTenantSchema }),
   asyncHandler(async (req, res) => {
     const tenant = await service.updateTenant(req.tenantId, req.body);
@@ -79,11 +94,24 @@ adminTenantRouter.patch(
 
 adminTenantRouter.post(
   '/image',
+  requirePlanActive,
   upload.single('image'),
   asyncHandler(async (req, res) => {
     if (!req.file) throw badRequest('Falta el archivo "image"');
     const publicPath = `/uploads/tenants/${req.file.filename}`;
     const tenant = await service.updateTenant(req.tenantId, { image_url: publicPath });
     res.status(201).json({ image_url: publicPath, tenant });
+  })
+);
+
+adminTenantRouter.post(
+  '/background',
+  requirePlanActive,
+  uploadBg.single('image'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) throw badRequest('Falta el archivo "image"');
+    const publicPath = `/uploads/tenants/${req.file.filename}`;
+    const tenant = await service.updateTenant(req.tenantId, { background_url: publicPath });
+    res.status(201).json({ background_url: publicPath, tenant });
   })
 );

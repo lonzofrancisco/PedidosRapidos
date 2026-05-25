@@ -10,6 +10,8 @@ import ProductsPage from './pages/admin/ProductsPage.jsx';
 import OrdersPage from './pages/admin/OrdersPage.jsx';
 import OrderDetailPage from './pages/admin/OrderDetailPage.jsx';
 import SettingsPage from './pages/admin/SettingsPage.jsx';
+import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage.jsx';
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard.jsx';
 import { RequireAuth } from './contexts/AuthContext.jsx';
 
 export default function App() {
@@ -37,6 +39,9 @@ export default function App() {
         <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
+
+      <Route path="/superAdmin/login" element={<SuperAdminLoginPage />} />
+      <Route path="/superAdmin" element={<SuperAdminDashboard />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

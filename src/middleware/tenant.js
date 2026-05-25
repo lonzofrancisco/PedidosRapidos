@@ -16,7 +16,7 @@ export async function resolveTenantBySlug(req, res, next) {
     if (!slug) return next(notFound('Tenant slug requerido'));
 
     const { rows } = await query(
-      `SELECT id, slug, name, whatsapp_number, currency, image_url, active,
+      `SELECT id, slug, name, whatsapp_number, currency, image_url, background_url, active,
               plan_status, trial_ends_at, paid_until
          FROM tenants
         WHERE slug = $1`,
@@ -46,4 +46,35 @@ export async function resolveTenantBySlug(req, res, next) {
 export function requireTenantContext(req, res, next) {
   if (!req.tenantId) return next(notFound('Tenant context missing'));
   next();
+}
+
+/**
+ * Bloquea endpoints admin de escritura/listado cuando el plan del tenant
+ * vencio (trial o pago). Aplicar DESPUES de requireAuth + requireTenantContext.
+ * Excepcion intencional: GET /admin/tenant debe seguir respondiendo para que
+ * el frontend pueda mostrar el banner "plan vencido".
+ */
+export async function requirePlanActive(req, res, next) {
+  try {
+    const { rows } = await query(
+      `SELECT plan_status, trial_ends_at, paid_until, active
+         FROM tenants
+        WHERE id = $1`,
+      [req.tenantId]
+    );
+    const tenant = rows[0];
+    if (!tenant || !tenant.active) return next(notFound('Tenant no encontrado'));
+
+    const plan = computePlanInfo(tenant);
+    if (plan.isExpired) {
+      const err = forbidden('Tu plan vencio. Renovalo para seguir usando el panel.');
+      err.details = { code: 'plan_expired', plan };
+      return next(err);
+    }
+
+    req.plan = plan;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }

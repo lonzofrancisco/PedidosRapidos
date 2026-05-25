@@ -7,7 +7,7 @@ import { badRequest, notFound } from '../../utils/httpError.js';
  */
 export async function listProducts(tenantId, { onlyActive = true } = {}) {
   const products = (await query(
-    `SELECT id, category_id, name, description, price, image_url, active
+    `SELECT id, category_id, name, description, price, image_url, image_urls, active
        FROM products
       WHERE tenant_id = $1 ${onlyActive ? 'AND active = TRUE' : ''}
       ORDER BY name`,
@@ -74,17 +74,23 @@ export async function getProduct(tenantId, productId) {
  */
 export async function createProduct(tenantId, payload) {
   return withTransaction(async (client) => {
+    // La portada (image_url) se deriva de la galeria: primera imagen, o el
+    // image_url suelto si no vino galeria.
+    const imageUrls = payload.image_urls ?? [];
+    const cover = imageUrls[0] ?? payload.image_url ?? null;
+
     const { rows: [product] } = await client.query(
-      `INSERT INTO products (tenant_id, category_id, name, description, price, image_url, active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
-       RETURNING id, category_id, name, description, price, image_url, active`,
+      `INSERT INTO products (tenant_id, category_id, name, description, price, image_url, image_urls, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING id, category_id, name, description, price, image_url, image_urls, active`,
       [
         tenantId,
         payload.category_id ?? null,
         payload.name,
         payload.description ?? null,
         payload.price,
-        payload.image_url ?? null,
+        cover,
+        imageUrls,
         payload.active ?? true,
       ]
     );
@@ -138,12 +144,21 @@ export async function updateProduct(tenantId, productId, patch) {
     // 1) Campos basicos del producto
     const fields = [];
     const values = [];
-    const allowed = ['name', 'description', 'price', 'image_url', 'category_id', 'active'];
+    const allowed = ['name', 'description', 'price', 'image_url', 'image_urls', 'category_id', 'active'];
     for (const key of allowed) {
       if (Object.prototype.hasOwnProperty.call(patch, key)) {
         values.push(patch[key]);
         fields.push(`${key} = $${values.length}`);
       }
+    }
+    // Si se actualiza la galeria sin mandar image_url explicito, sincronizamos
+    // la portada con la primera imagen de la galeria.
+    if (
+      Object.prototype.hasOwnProperty.call(patch, 'image_urls') &&
+      !Object.prototype.hasOwnProperty.call(patch, 'image_url')
+    ) {
+      values.push(patch.image_urls?.[0] ?? null);
+      fields.push(`image_url = $${values.length}`);
     }
     if (fields.length > 0) {
       values.push(tenantId, productId);

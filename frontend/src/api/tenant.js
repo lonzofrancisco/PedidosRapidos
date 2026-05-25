@@ -2,11 +2,12 @@ import { api, ApiError } from './client.js';
 
 const BASE = '/api/v1';
 
-async function uploadImage(token, file) {
+// Sube un archivo (campo "image") a un endpoint de upload del tenant.
+async function uploadTo(path, token, file) {
   const fd = new FormData();
   fd.append('image', file);
 
-  const res = await fetch(`${BASE}/admin/tenant/image`, {
+  const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: fd,
@@ -22,7 +23,8 @@ async function uploadImage(token, file) {
 }
 
 export const tenantApi = {
-  get:         (token)        => api.get('/admin/tenant', { token }),
-  update:      (token, patch) => api.patch('/admin/tenant', patch, { token }),
-  uploadImage,
+  get:              (token)        => api.get('/admin/tenant', { token }),
+  update:           (token, patch) => api.patch('/admin/tenant', patch, { token }),
+  uploadImage:      (token, file)  => uploadTo('/admin/tenant/image', token, file),
+  uploadBackground: (token, file)  => uploadTo('/admin/tenant/background', token, file),
 };
