@@ -6,8 +6,8 @@
  *   ej: "5215512345678"
  */
 export function buildWhatsappLink({ tenant, order, orderUrl }) {
-  const lines = [`Hola! Te paso mi pedido Numero ${order.short_code}`];
-  if (orderUrl) lines.push(`Este es mi pedido: ${orderUrl}`);
+  const lines = [`Hola! Te paso mi pedido #${order.short_code}`];
+  if (orderUrl) lines.push(`Ver el pedido: ${orderUrl}`);
 
   const text = encodeURIComponent(lines.join('\n'));
   return `https://wa.me/${tenant.whatsapp_number}?text=${text}`;

@@ -104,7 +104,7 @@ export default function StorefrontPage() {
     <div className={`min-h-screen pb-28 ${bg ? '' : 'bg-slate-50'}`}>
       {bg && (
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <img src={bg} alt="" className="w-full h-full object-cover blur-xl scale-110" />
+          <img src={bg} alt="" className="w-full h-full object-cover blur-sm scale-110" />
           <div className="absolute inset-0 bg-white/60" />
         </div>
       )}

@@ -25,6 +25,12 @@ export default function App() {
       <Route path="/t/:slug/orders/:orderId" element={<OrderSuccessPage />} />
 
       <Route path="/admin/login" element={<LoginPage />} />
+
+      {/* Detalle de pedido compartido: lo abre la tienda (gestiona el estado)
+          y tambien el comprador desde el link (solo lectura). Por eso vive
+          fuera de RequireAuth; el control de acceso lo resuelve la propia pagina. */}
+      <Route path="/admin/orders/:orderId" element={<OrderDetailPage />} />
+
       <Route
         path="/admin"
         element={
@@ -36,7 +42,6 @@ export default function App() {
         <Route index element={<Navigate to="orders" replace />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="orders" element={<OrdersPage />} />
-        <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

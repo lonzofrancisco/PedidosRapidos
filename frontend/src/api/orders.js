@@ -3,6 +3,8 @@ import { api } from './client.js';
 export const ordersApi = {
   create:     (slug, payload)    => api.post(`/t/${slug}/orders`, payload),
   getPublic:  (slug, id)         => api.get(`/t/${slug}/orders/${id}`),
+  // Pedido por id (magic link compartido, sin slug ni token).
+  getById:    (id)               => api.get(`/orders/${id}`),
 
   listAdmin:  (token, params = {}) => {
     const q = new URLSearchParams();

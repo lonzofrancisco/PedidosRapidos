@@ -94,7 +94,6 @@ Flags:
    |  '- orders/              # creacion publica + gestion admin
    '- utils/
       |- whatsapp.js          # builder de deeplink wa.me
-      |- shortCode.js
       |- asyncHandler.js
       '- httpError.js
 ```
@@ -283,7 +282,7 @@ Respuesta:
 {
   "order": {
     "id": "ORDER_UUID",
-    "short_code": "K7HQ29",
+    "short_code": "1",
     "status": "pending",
     "total": "340.00",
     "currency": "ARS",

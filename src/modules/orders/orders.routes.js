@@ -68,6 +68,21 @@ publicOrdersRouter.get(
   })
 );
 
+// ---------- Pedido por id (magic link, sin slug) ----------------------
+// Montado en: /api/v1/orders/:id
+// La pagina de detalle compartida la usa para que el comprador (no logueado)
+// vea su pedido. El id es un UUID no enumerable, asi que actua de magic link.
+export const publicOrderByIdRouter = Router();
+
+publicOrderByIdRouter.get(
+  '/:id',
+  validate({ params: idParam }),
+  asyncHandler(async (req, res) => {
+    const order = await service.getOrderById(req.params.id);
+    res.json(order);
+  })
+);
+
 // ---------- Admin router ----------------------------------------------
 // Montado en: /api/v1/admin/orders
 export const adminOrdersRouter = Router();

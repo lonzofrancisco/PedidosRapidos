@@ -1,6 +1,5 @@
 import { query, withTransaction } from '../../config/db.js';
 import { badRequest, notFound } from '../../utils/httpError.js';
-import { generateShortCode } from '../../utils/shortCode.js';
 import { buildWhatsappLink } from '../../utils/whatsapp.js';
 
 /**
@@ -151,31 +150,28 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
 
   // 3) Insertar todo en una transaccion.
   const order = await withTransaction(async (client) => {
-    let shortCode;
-    let orderRow;
-    // reintenta hasta 5 veces si por casualidad colisiona el short_code
-    for (let attempt = 0; attempt < 5; attempt++) {
-      shortCode = generateShortCode(6);
-      try {
-        const { rows } = await client.query(
-          `INSERT INTO orders
-             (tenant_id, short_code, customer_name, customer_phone, customer_address, notes, total, currency)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-           RETURNING id, short_code, status, total, currency, created_at, customer_name, customer_phone, customer_address, notes`,
-          [
-            tenant.id, shortCode,
-            payload.customer.name, payload.customer.phone,
-            payload.customer.address ?? null, payload.customer.notes ?? null,
-            total.toFixed(2), tenant.currency,
-          ]
-        );
-        orderRow = rows[0];
-        break;
-      } catch (err) {
-        if (err.code === '23505' && attempt < 4) continue; // unique violation -> retry
-        throw err;
-      }
-    }
+    // Numero de pedido secuencial por tienda (#1, #2, ...). El UPDATE bloquea
+    // la fila del tenant hasta el commit, asi dos pedidos concurrentes no toman
+    // el mismo numero; si el pedido falla, el incremento se revierte (rollback).
+    const { rows: [{ order_seq: number }] } = await client.query(
+      `UPDATE tenants SET order_seq = order_seq + 1 WHERE id = $1 RETURNING order_seq`,
+      [tenant.id]
+    );
+    const shortCode = String(number);
+
+    const { rows } = await client.query(
+      `INSERT INTO orders
+         (tenant_id, short_code, customer_name, customer_phone, customer_address, notes, total, currency)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING id, short_code, status, total, currency, created_at, customer_name, customer_phone, customer_address, notes`,
+      [
+        tenant.id, shortCode,
+        payload.customer.name, payload.customer.phone,
+        payload.customer.address ?? null, payload.customer.notes ?? null,
+        total.toFixed(2), tenant.currency,
+      ]
+    );
+    const orderRow = rows[0];
 
     for (const item of computedItems) {
       const { rows: [itemRow] } = await client.query(
@@ -202,27 +198,25 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
     return { ...orderRow, items: computedItems };
   });
 
-  const orderUrl = publicBaseUrl
-    ? `${publicBaseUrl.replace(/\/+$/, '')}/t/${tenant.slug}/orders/${order.id}`
-    : null;
-  const whatsappUrl = buildWhatsappLink({ tenant, order, orderUrl });
+  // El comprador ve su pedido en /t/:slug/orders/:id (publico). El mensaje de
+  // WhatsApp lo recibe la TIENDA, asi que su link apunta a /admin/orders/:id
+  // (el login redirige de vuelta al pedido si hace falta).
+  const base = publicBaseUrl ? publicBaseUrl.replace(/\/+$/, '') : null;
+  const orderUrl = base ? `${base}/t/${tenant.slug}/orders/${order.id}` : null;
+  const adminOrderUrl = base ? `${base}/admin/orders/${order.id}` : null;
+  const whatsappUrl = buildWhatsappLink({ tenant, order, orderUrl: adminOrderUrl });
   return { order, whatsappUrl, orderUrl };
 }
 
-export async function getOrder(tenantId, orderId) {
-  const { rows } = await query(
-    `SELECT id, short_code, status, total, currency, created_at,
-            customer_name, customer_phone, customer_address, notes
-       FROM orders WHERE tenant_id = $1 AND id = $2`,
-    [tenantId, orderId]
-  );
-  const order = rows[0];
-  if (!order) throw notFound('Pedido no encontrado');
+const ORDER_COLUMNS = `id, short_code, status, total, currency, created_at,
+            customer_name, customer_phone, customer_address, notes`;
 
+// Carga items + opciones de un pedido ya leido y los adjunta.
+async function attachItems(order) {
   const items = (await query(
     `SELECT id, product_id, product_name, unit_price, quantity, subtotal, notes
        FROM order_items WHERE order_id = $1`,
-    [orderId]
+    [order.id]
   )).rows;
 
   if (items.length > 0) {
@@ -240,6 +234,29 @@ export async function getOrder(tenantId, orderId) {
   }
 
   return { ...order, items };
+}
+
+// Lectura admin: exige que el pedido pertenezca al tenant del que pregunta.
+export async function getOrder(tenantId, orderId) {
+  const { rows } = await query(
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE tenant_id = $1 AND id = $2`,
+    [tenantId, orderId]
+  );
+  const order = rows[0];
+  if (!order) throw notFound('Pedido no encontrado');
+  return attachItems(order);
+}
+
+// Lectura publica por id (magic link por UUID): la usa el comprador para ver
+// su pedido sin estar logueado. No filtra por tenant porque el id es unico.
+export async function getOrderById(orderId) {
+  const { rows } = await query(
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE id = $1`,
+    [orderId]
+  );
+  const order = rows[0];
+  if (!order) throw notFound('Pedido no encontrado');
+  return attachItems(order);
 }
 
 export async function listOrders(tenantId, { status, limit = 50 } = {}) {
