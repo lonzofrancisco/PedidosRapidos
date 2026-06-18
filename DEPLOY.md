@@ -133,7 +133,17 @@ EOF
 sudo chmod +x /etc/cron.daily/pedidos-backup
 ```
 
-Para algo más serio: subir los dumps a Cloudflare R2 o Backblaze B2 con `rclone`.
+Para subir los dumps a un object storage externo (Cloudflare R2 / Backblaze B2)
+hay un script listo en `deploy/backup.sh` (usa `rclone`):
+
+```bash
+# 1) Instalar y configurar rclone una vez (creá un remote, ej "r2"):
+sudo apt install -y rclone && rclone config
+# 2) Probar el backup a mano:
+RCLONE_REMOTE=r2:pedidos-backups bash deploy/backup.sh
+# 3) Programarlo a diario:
+sudo ln -sf "$PWD/deploy/backup.sh" /etc/cron.daily/pedidos-backup
+```
 
 ---
 
@@ -152,11 +162,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 ## 8. Después de salir a internet — siguiente lista
 
-- [ ] Integrar Mercado Pago o Stripe para cobrar suscripciones automáticamente (hoy es manual via Adminer).
+- [x] Cobro con Mercado Pago (Checkout Pro) integrado — falta cargar `MP_ACCESS_TOKEN` y `MP_PLAN_PRICE` en `.env.prod`.
+- [x] Email transaccional por SMTP integrado — falta cargar `SMTP_*` y `EMAIL_FROM` (Brevo / Gmail / Mailgun).
+- [x] Backups offsite con `deploy/backup.sh` — falta configurar `rclone` + el cron.
 - [ ] Comprar dominio real (`mitienda.com.ar` ~ARS 1500/año en NIC.ar) y reapuntar Caddyfile.
 - [ ] Sentry o similar para enterarte de los 500.
-- [ ] Email transaccional (Resend / Brevo / Postmark) para password reset y aviso de fin de prueba.
-- [ ] Subir backups de Postgres a un object storage externo (R2 / B2).
+- [ ] Cobro recurrente automático (suscripciones/preapproval de MP) sobre el link mensual actual.
 
 ---
 

@@ -51,6 +51,12 @@ export default function HomePage() {
               Iniciá sesión
             </Link>
           </div>
+
+          <div className="text-center text-xs text-slate-400">
+            <Link to="/terminos" className="hover:underline">Términos</Link>
+            {' · '}
+            <Link to="/privacidad" className="hover:underline">Privacidad</Link>
+          </div>
         </div>
       </div>
     </div>

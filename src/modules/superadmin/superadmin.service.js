@@ -5,6 +5,7 @@ import { query, withTransaction } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { unauthorized, notFound, badRequest, conflict } from '../../utils/httpError.js';
 import { computePlanInfo } from '../../utils/plan.js';
+import { sendPasswordResetEmail } from '../../utils/email.js';
 
 const DAY_MS = 86_400_000;
 
@@ -288,6 +289,9 @@ export async function resetAdminPassword(tenantId, newPassword, actor) {
   await logAction(actor, 'reset_password', {
     tenantId, tenantSlug: user.tenant_slug, detail: { email: user.email },
   });
+
+  // Avisar al admin por email (best-effort; si no hay SMTP configurado, se omite).
+  await sendPasswordResetEmail({ to: user.email, password, tenantSlug: user.tenant_slug });
 
   return { email: user.email, password };
 }

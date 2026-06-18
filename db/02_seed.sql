@@ -33,6 +33,12 @@ BEGIN
     'admin'
   ) ON CONFLICT DO NOTHING;
 
+  -- Catalogo de demo: solo si la tienda todavia no tiene productos, asi el
+  -- runner de migraciones puede re-ejecutar este archivo sin duplicar datos.
+  IF EXISTS (SELECT 1 FROM products WHERE tenant_id = v_tenant_id) THEN
+    RETURN;
+  END IF;
+
   -- Categoria
   INSERT INTO categories (tenant_id, name, position)
   VALUES (v_tenant_id, 'Hamburguesas', 1)

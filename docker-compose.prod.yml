@@ -18,7 +18,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pedidos_pgdata:/var/lib/postgresql/data
-      - ./db:/docker-entrypoint-initdb.d:ro
+      # El schema y el seed los aplica el API al arrancar (src/config/migrate.js),
+      # no el initdb de Postgres. Asi tambien corren las migraciones nuevas
+      # sobre una base que ya existia.
     # NO 'ports': la DB solo es accesible desde la red interna del compose.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -45,6 +47,17 @@ services:
       SUPERADMIN_JWT_EXPIRES_IN: ${SUPERADMIN_JWT_EXPIRES_IN:-8h}
       UPLOAD_DIR: /app/uploads
       CORS_ORIGIN: https://${DOMAIN}
+      APP_NAME: ${APP_NAME:-Pedidos Rapidos}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      EMAIL_FROM: ${EMAIL_FROM:-Pedidos Rapidos <no-reply@pedidos.local>}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
+      MP_PLAN_PRICE: ${MP_PLAN_PRICE:-0}
+      MP_PLAN_DAYS: ${MP_PLAN_DAYS:-30}
+      MP_PLAN_CURRENCY: ${MP_PLAN_CURRENCY:-ARS}
     volumes:
       - pedidos_uploads:/app/uploads
     # No expone puertos: Caddy/web hablan con ella por la red interna.

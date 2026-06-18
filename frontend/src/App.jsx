@@ -10,6 +10,8 @@ import ProductsPage from './pages/admin/ProductsPage.jsx';
 import OrdersPage from './pages/admin/OrdersPage.jsx';
 import OrderDetailPage from './pages/admin/OrderDetailPage.jsx';
 import SettingsPage from './pages/admin/SettingsPage.jsx';
+import TermsPage from './pages/legal/TermsPage.jsx';
+import PrivacyPage from './pages/legal/PrivacyPage.jsx';
 import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage.jsx';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard.jsx';
 import { RequireAuth } from './contexts/AuthContext.jsx';
@@ -44,6 +46,9 @@ export default function App() {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
+
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
 
       <Route path="/superAdmin/login" element={<SuperAdminLoginPage />} />
       <Route path="/superAdmin" element={<SuperAdminDashboard />} />

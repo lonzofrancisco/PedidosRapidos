@@ -144,6 +144,12 @@ export default function SignupPage() {
           <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
             {submitting ? 'Creando...' : 'Crear mi tienda gratis'}
           </button>
+
+          <p className="text-xs text-slate-500 text-center">
+            Al crear tu tienda aceptás los{' '}
+            <Link to="/terminos" className="text-brand-600 hover:underline">Términos</Link> y la{' '}
+            <Link to="/privacidad" className="text-brand-600 hover:underline">Política de Privacidad</Link>.
+          </p>
         </form>
 
         <div className="mt-6 pt-6 border-t border-slate-200 text-sm text-slate-600 text-center">

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { withTransaction } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { badRequest, conflict } from '../../utils/httpError.js';
+import { sendWelcomeEmail } from '../../utils/email.js';
 
 const TRIAL_DAYS = 15;
 
@@ -14,7 +15,7 @@ const TRIAL_DAYS = 15;
 export async function signup(payload) {
   const slug = payload.slug.trim().toLowerCase();
 
-  return withTransaction(async (client) => {
+  const result = await withTransaction(async (client) => {
     // Check de slug unico (la unique constraint igual lo enforza,
     // pero asi devolvemos 409 con mensaje claro en vez de un 500).
     const existing = await client.query(
@@ -78,4 +79,9 @@ export async function signup(payload) {
     }
     throw err;
   });
+
+  // Bienvenida best-effort (no bloquea el alta si falla o no hay SMTP).
+  sendWelcomeEmail({ to: result.user.email, tenantName: result.tenant.name, slug: result.tenant.slug });
+
+  return result;
 }

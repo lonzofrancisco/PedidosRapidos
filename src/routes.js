@@ -5,6 +5,7 @@ import { publicOrdersRouter, publicOrderByIdRouter, adminOrdersRouter } from './
 import { adminTenantRouter } from './modules/tenants/tenants.routes.js';
 import { signupRouter } from './modules/signup/signup.routes.js';
 import superadminRouter from './modules/superadmin/superadmin.routes.js';
+import { publicBillingRouter, adminBillingRouter } from './modules/billing/billing.routes.js';
 
 const router = Router();
 
@@ -28,9 +29,13 @@ router.use('/t/:tenantSlug/orders',   publicOrdersRouter);
 // Pedido por id (magic link compartido, sin slug)
 router.use('/orders', publicOrderByIdRouter);
 
+// Webhook de Mercado Pago (lo llama MP, sin auth)
+router.use('/billing', publicBillingRouter);
+
 // ---------- Admin (autenticado, tenant via JWT) -----------------------
 router.use('/admin/products', adminProductsRouter);
 router.use('/admin/orders',   adminOrdersRouter);
 router.use('/admin/tenant',   adminTenantRouter);
+router.use('/admin/billing',  adminBillingRouter);
 
 export default router;

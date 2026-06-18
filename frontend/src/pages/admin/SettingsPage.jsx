@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { tenantApi } from '../../api/tenant.js';
+import { billingApi } from '../../api/billing.js';
 
 function planInfo(tenant) {
   if (!tenant) return null;
@@ -15,19 +16,35 @@ function planInfo(tenant) {
   return { status, expiresAt, daysLeft };
 }
 
-function PlanBanner({ tenant }) {
+function PlanBanner({ tenant, billing, onRenew, renewing }) {
   const info = planInfo(tenant);
   if (!info) return null;
   const fmt = (d) => d?.toLocaleDateString();
+  const canPay = Boolean(billing?.enabled);
+  const priceLabel = canPay ? `$${billing.price} ${billing.currency}/mes` : null;
+
+  const RenewBtn = ({ primary, label }) => (
+    canPay ? (
+      <button
+        type="button"
+        className={`${primary ? 'btn-primary' : 'btn-secondary'} mt-3`}
+        disabled={renewing}
+        onClick={onRenew}
+      >
+        {renewing ? 'Redirigiendo a Mercado Pago...' : `${label}${priceLabel ? ` · ${priceLabel}` : ''}`}
+      </button>
+    ) : null
+  );
 
   if (info.status === 'expired') {
     return (
       <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4">
         <p className="font-semibold text-red-800">Tu plan expiró</p>
         <p className="text-sm text-red-700 mt-1">
-          Tu tienda pública está temporalmente desactivada. Para reactivarla,
-          contactá al soporte para abonar el plan mensual.
+          Tu tienda pública está temporalmente desactivada.
+          {canPay ? ' Reactivala pagando el plan mensual.' : ' Para reactivarla, contactá al soporte para abonar el plan mensual.'}
         </p>
+        <RenewBtn primary label="Renovar plan ahora" />
       </div>
     );
   }
@@ -40,6 +57,7 @@ function PlanBanner({ tenant }) {
         <p className="text-sm text-amber-800 mt-1">
           Vence el {fmt(info.expiresAt)}. Después se activa el plan mensual.
         </p>
+        <RenewBtn label="Pagar el plan ahora" />
       </div>
     );
   }
@@ -49,6 +67,7 @@ function PlanBanner({ tenant }) {
       <p className="text-sm text-emerald-800 mt-1">
         Próxima fecha de pago: {fmt(info.expiresAt)}.
       </p>
+      <RenewBtn label="Renovar un mes más" />
     </div>
   );
 }
@@ -63,6 +82,9 @@ export default function SettingsPage() {
   const [uploadingBg, setUploadingBg] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [billing, setBilling] = useState(null);
+  const [renewing, setRenewing] = useState(false);
+  const [pagoMsg, setPagoMsg] = useState(null);
   const fileRef = useRef(null);
   const bgFileRef = useRef(null);
 
@@ -77,6 +99,7 @@ export default function SettingsPage() {
         image_url: data.image_url ?? '',
         background_url: data.background_url ?? '',
       });
+      setBilling(await billingApi.config(token).catch(() => null));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,6 +108,27 @@ export default function SettingsPage() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  // Al volver de Mercado Pago (back_urls) mostramos el resultado del pago.
+  useEffect(() => {
+    const pago = new URLSearchParams(window.location.search).get('pago');
+    if (!pago) return;
+    if (pago === 'ok') setPagoMsg({ ok: true, text: 'Recibimos tu pago. En unos segundos tu plan queda activo (recargá si no se actualiza).' });
+    else if (pago === 'pendiente') setPagoMsg({ ok: true, text: 'Tu pago quedó pendiente de acreditación.' });
+    else setPagoMsg({ ok: false, text: 'No se pudo completar el pago. Probá de nuevo.' });
+  }, []);
+
+  const doRenew = async () => {
+    setError(null);
+    setRenewing(true);
+    try {
+      const { url } = await billingApi.renew(token);
+      window.location.href = url; // redirige a Checkout Pro
+    } catch (err) {
+      setError(err.message);
+      setRenewing(false);
+    }
+  };
 
   const onSave = async (e) => {
     e.preventDefault();
@@ -203,7 +247,13 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <PlanBanner tenant={tenant} />
+      {pagoMsg && (
+        <div className={`rounded-lg p-3 mb-4 text-sm border ${pagoMsg.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          {pagoMsg.text}
+        </div>
+      )}
+
+      <PlanBanner tenant={tenant} billing={billing} onRenew={doRenew} renewing={renewing} />
 
       <div className="card p-5 space-y-5">
         {/* Imagen */}
