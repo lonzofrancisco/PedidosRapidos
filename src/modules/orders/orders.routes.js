@@ -58,7 +58,9 @@ publicOrdersRouter.post(
   })
 );
 
-// Permite al cliente consultar el estado por id (no expone datos sensibles).
+// Lectura del pedido por id para el comprador (magic link): el UUID no es
+// enumerable y actua de credencial, por eso alcanza con el id + slug. Devuelve
+// los datos del propio pedido, incluido contacto y direccion del cliente.
 publicOrdersRouter.get(
   '/:id',
   validate({ params: idParam }),

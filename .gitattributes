@@ -1,3 +1,9 @@
+# Normaliza todo el texto a LF en repo y working tree. Corta el ruido de
+# "LF will be replaced by CRLF" al editar/commitear desde Windows y mantiene
+# los diffs limpios. Las reglas de abajo quedan cubiertas por esta; se dejan
+# como documentacion explicita de los archivos que si o si deben ir en LF.
+* text=auto eol=lf
+
 # Forzar LF en archivos que se ejecutan en Linux. Sin esto, si commiteas
 # desde Windows con autocrlf, el bash de la VM se rompe leyendo \r.
 *.sh        text eol=lf
