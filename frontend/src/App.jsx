@@ -10,6 +10,7 @@ import ProductsPage from './pages/admin/ProductsPage.jsx';
 import OrdersPage from './pages/admin/OrdersPage.jsx';
 import OrderDetailPage from './pages/admin/OrderDetailPage.jsx';
 import SettingsPage from './pages/admin/SettingsPage.jsx';
+import ReportsPage from './pages/admin/ReportsPage.jsx';
 import TermsPage from './pages/legal/TermsPage.jsx';
 import PrivacyPage from './pages/legal/PrivacyPage.jsx';
 import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage.jsx';
@@ -44,6 +45,7 @@ export default function App() {
         <Route index element={<Navigate to="orders" replace />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="orders" element={<OrdersPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

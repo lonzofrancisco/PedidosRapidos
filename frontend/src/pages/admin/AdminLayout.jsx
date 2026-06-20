@@ -23,6 +23,7 @@ export default function AdminLayout() {
           <nav className="flex gap-2 ml-4">
             <NavLink to="/admin/orders" className={tab}>Pedidos</NavLink>
             <NavLink to="/admin/products" className={tab}>Productos</NavLink>
+            <NavLink to="/admin/reports" className={tab}>Reportes</NavLink>
             <NavLink to="/admin/settings" className={tab}>Tienda</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">

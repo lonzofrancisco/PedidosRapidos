@@ -6,6 +6,7 @@ import { adminTenantRouter } from './modules/tenants/tenants.routes.js';
 import { signupRouter } from './modules/signup/signup.routes.js';
 import superadminRouter from './modules/superadmin/superadmin.routes.js';
 import { publicBillingRouter, adminBillingRouter } from './modules/billing/billing.routes.js';
+import { adminReportsRouter } from './modules/reports/reports.routes.js';
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/admin/products', adminProductsRouter);
 router.use('/admin/orders',   adminOrdersRouter);
 router.use('/admin/tenant',   adminTenantRouter);
 router.use('/admin/billing',  adminBillingRouter);
+router.use('/admin/reports',  adminReportsRouter);
 
 export default router;
