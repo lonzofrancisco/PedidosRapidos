@@ -9,6 +9,25 @@ jobs:
   backend:
     name: Backend (tests)
     runs-on: ubuntu-latest
+    # Postgres para que corran los tests de aislamiento multi-tenant
+    # (src/modules/isolation.integration.test.js). Sin esto se saltean.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pedidos
+          POSTGRES_PASSWORD: pedidos
+          POSTGRES_DB: pedidos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pedidos"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://pedidos:pedidos@localhost:5432/pedidos
+      JWT_SECRET: test-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

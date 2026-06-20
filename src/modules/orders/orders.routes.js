@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { resolveTenantBySlug, requireTenantContext, requirePlanActive } from '../../middleware/tenant.js';
@@ -48,8 +49,20 @@ export const publicOrdersRouter = Router({ mergeParams: true });
 
 publicOrdersRouter.use(resolveTenantBySlug);
 
+// Anti-spam: un cliente real crea 1-2 pedidos; 20 cada 10 min por IP deja
+// margen de sobra y frena floods de pedidos falsos (con 'trust proxy' usa la
+// IP real del cliente, no la de nginx/Caddy).
+const createOrderLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiados pedidos seguidos. Esperá unos minutos.' },
+});
+
 publicOrdersRouter.post(
   '/',
+  createOrderLimiter,
   validate({ body: createOrderSchema }),
   asyncHandler(async (req, res) => {
     const publicBaseUrl = resolvePublicBaseUrl(req);
