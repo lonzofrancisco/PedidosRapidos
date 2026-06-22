@@ -32,6 +32,17 @@ export async function updateTenant(tenantId, patch) {
   }
   if (Object.prototype.hasOwnProperty.call(patch, 'opening_hours') && patch.opening_hours !== null) {
     if (typeof patch.opening_hours !== 'object') throw new Error('Los horarios deben ser un objeto JSON válido');
+
+    const dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+    for (const [day, schedule] of Object.entries(patch.opening_hours)) {
+      if (!dias.includes(day)) throw new Error(`Día inválido: ${day}`);
+      if (schedule !== null) {
+        if (!schedule.open || !schedule.close) throw new Error(`Horarios incompletos para ${day}`);
+        if (!/^\d{2}:\d{2}$/.test(schedule.open) || !/^\d{2}:\d{2}$/.test(schedule.close)) {
+          throw new Error(`Formato de hora inválido para ${day}. Use HH:MM`);
+        }
+      }
+    }
   }
 
   const fields = [];

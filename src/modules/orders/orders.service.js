@@ -1,6 +1,7 @@
 import { query, withTransaction } from '../../config/db.js';
 import { badRequest, notFound } from '../../utils/httpError.js';
 import { buildWhatsappLink } from '../../utils/whatsapp.js';
+import { isOpenNow } from '../../utils/store.js';
 
 /**
  * Crea un pedido a partir del carrito enviado por el cliente.
@@ -149,7 +150,7 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
   }
 
   // Validaciones de operacion de tienda antes de insertar.
-  if (!tenant.is_open) {
+  if (!isOpenNow(tenant)) {
     throw badRequest('Esta tienda está temporalmente cerrada.');
   }
 

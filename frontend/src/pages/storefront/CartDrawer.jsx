@@ -1,4 +1,5 @@
 import { formatMoney } from '../../utils/format.js';
+import { isOpenNow } from '../../utils/store.js';
 
 function CartIcon({ className = 'h-6 w-6' }) {
   return (
@@ -38,7 +39,7 @@ export default function CartDrawer({ open, onClose, cart, currency, onCheckout, 
   const shippingCost = Number(tenant?.shipping_cost ?? 0);
   const minOrderAmount = tenant?.min_order_amount ? Number(tenant.min_order_amount) : null;
   const totalWithShipping = cart.total + shippingCost;
-  const canCheckout = !empty && (!minOrderAmount || totalWithShipping >= minOrderAmount) && tenant?.is_open;
+  const canCheckout = !empty && (!minOrderAmount || totalWithShipping >= minOrderAmount) && isOpenNow(tenant);
 
   return (
     <div className="fixed inset-0 z-30 flex">
@@ -130,9 +131,9 @@ export default function CartDrawer({ open, onClose, cart, currency, onCheckout, 
             </p>
           )}
 
-          {!tenant?.is_open && (
+          {!isOpenNow(tenant) && (
             <p className="text-xs text-red-700 bg-red-50 rounded px-3 py-2 dark:text-red-200 dark:bg-red-900/30">
-              Esta tienda está temporalmente cerrada.
+              Esta tienda está cerrada.
             </p>
           )}
 

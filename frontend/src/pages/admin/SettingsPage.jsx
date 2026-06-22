@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { tenantApi } from '../../api/tenant.js';
 import { billingApi } from '../../api/billing.js';
+import { DEFAULT_OPENING_HOURS, DAY_LABELS, DAYS_OF_WEEK } from '../../utils/store.js';
 
 function planInfo(tenant) {
   if (!tenant) return null;
@@ -78,6 +79,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     name: '', whatsapp_number: '', image_url: '', background_url: '',
     is_open: true, shipping_cost: 0, min_order_amount: '',
+    opening_hours: DEFAULT_OPENING_HOURS,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,6 +106,7 @@ export default function SettingsPage() {
         is_open: data.is_open ?? true,
         shipping_cost: data.shipping_cost ?? 0,
         min_order_amount: data.min_order_amount ?? '',
+        opening_hours: data.opening_hours ?? DEFAULT_OPENING_HOURS,
       });
       setBilling(await billingApi.config(token).catch(() => null));
     } catch (err) {
@@ -155,6 +158,22 @@ export default function SettingsPage() {
       return;
     }
 
+    // Validar horarios
+    for (const [day, schedule] of Object.entries(form.opening_hours)) {
+      if (schedule !== null) {
+        if (!schedule.open || !schedule.close) {
+          setError(`Faltan horarios para ${day}`);
+          setSaving(false);
+          return;
+        }
+        if (!/^\d{2}:\d{2}$/.test(schedule.open) || !/^\d{2}:\d{2}$/.test(schedule.close)) {
+          setError(`Formato inválido en ${day}. Use HH:MM`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
+
     try {
       const patch = {
         name: form.name,
@@ -164,6 +183,7 @@ export default function SettingsPage() {
         is_open: form.is_open,
         shipping_cost: Number(form.shipping_cost),
         min_order_amount: minAmount,
+        opening_hours: form.opening_hours,
       };
       const updated = await tenantApi.update(token, patch);
       setTenant(updated);
@@ -414,50 +434,104 @@ export default function SettingsPage() {
           <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
             <h3 className="font-semibold text-sm mb-3">Operación</h3>
 
-            <div>
-              <label className="label flex items-center gap-2 cursor-pointer">
+            <div className="mb-4">
+              <label className="label">Horarios de atención</label>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                Configura los horarios para cada día. Dejar sin seleccionar para cerrado ese día.
+              </p>
+              <div className="space-y-2">
+                {DAYS_OF_WEEK.map(day => {
+                  const schedule = form.opening_hours?.[day];
+                  const isOpen = schedule !== null;
+                  return (
+                    <div key={day} className="flex items-center gap-3 p-2 rounded bg-slate-50 dark:bg-slate-700/30">
+                      <label className="flex items-center gap-2 cursor-pointer min-w-fit">
+                        <input
+                          type="checkbox"
+                          checked={isOpen}
+                          onChange={(e) => {
+                            setForm({
+                              ...form,
+                              opening_hours: {
+                                ...form.opening_hours,
+                                [day]: e.target.checked ? { open: '09:00', close: '22:00' } : null,
+                              },
+                            });
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm font-medium w-20">{DAY_LABELS[day]}</span>
+                      </label>
+                      {isOpen && (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="time"
+                            value={schedule.open}
+                            onChange={(e) => {
+                              setForm({
+                                ...form,
+                                opening_hours: {
+                                  ...form.opening_hours,
+                                  [day]: { ...schedule, open: e.target.value },
+                                },
+                              });
+                            }}
+                            className="input text-sm py-1 px-2 w-20"
+                          />
+                          <span className="text-sm">a</span>
+                          <input
+                            type="time"
+                            value={schedule.close}
+                            onChange={(e) => {
+                              setForm({
+                                ...form,
+                                opening_hours: {
+                                  ...form.opening_hours,
+                                  [day]: { ...schedule, close: e.target.value },
+                                },
+                              });
+                            }}
+                            className="input text-sm py-1 px-2 w-20"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-700 pt-3">
+              <div className="mt-3">
+                <label className="label">Costo de envío ({tenant?.currency})</label>
                 <input
-                  type="checkbox"
-                  checked={form.is_open}
-                  onChange={(e) => setForm({ ...form, is_open: e.target.checked })}
-                  className="w-4 h-4"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input"
+                  value={form.shipping_cost}
+                  onChange={(e) => setForm({ ...form, shipping_cost: e.target.value })}
                 />
-                <span>Tienda abierta</span>
-              </label>
-              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                {form.is_open ? 'Los clientes pueden hacer pedidos' : 'Los clientes no pueden hacer pedidos'}
-              </p>
-            </div>
+                <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+                  Se suma al total del pedido. Dejar en 0 para envío gratis.
+                </p>
+              </div>
 
-            <div className="mt-3">
-              <label className="label">Costo de envío ({tenant?.currency})</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                className="input"
-                value={form.shipping_cost}
-                onChange={(e) => setForm({ ...form, shipping_cost: e.target.value })}
-              />
-              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                Se suma al total del pedido. Dejar en 0 para envío gratis.
-              </p>
-            </div>
-
-            <div className="mt-3">
-              <label className="label">Mínimo de compra ({tenant?.currency})</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                className="input"
-                placeholder="Dejar vacío para sin mínimo"
-                value={form.min_order_amount}
-                onChange={(e) => setForm({ ...form, min_order_amount: e.target.value })}
-              />
-              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                Monto mínimo que los clientes deben gastar. Dejar vacío para sin restricción.
-              </p>
+              <div className="mt-3">
+                <label className="label">Mínimo de compra ({tenant?.currency})</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input"
+                  placeholder="Dejar vacío para sin mínimo"
+                  value={form.min_order_amount}
+                  onChange={(e) => setForm({ ...form, min_order_amount: e.target.value })}
+                />
+                <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+                  Monto mínimo que los clientes deben gastar. Dejar vacío para sin restricción.
+                </p>
+              </div>
             </div>
           </div>
 

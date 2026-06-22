@@ -5,6 +5,7 @@ import { ordersApi } from '../../api/orders.js';
 import { productsApi } from '../../api/products.js';
 import { formatMoney } from '../../utils/format.js';
 import { isPhone } from '../../utils/validate.js';
+import { isOpenNow } from '../../utils/store.js';
 
 export default function CheckoutPage() {
   const { slug } = useParams();
@@ -38,8 +39,8 @@ export default function CheckoutPage() {
     setError(null);
 
     // Validar estado de tienda
-    if (tenant && !tenant.is_open) {
-      setError('Esta tienda está temporalmente cerrada.');
+    if (tenant && !isOpenNow(tenant)) {
+      setError('Esta tienda está cerrada.');
       return;
     }
 
@@ -161,9 +162,9 @@ export default function CheckoutPage() {
             <span>{formatMoney(cart.total + (tenant ? Number(tenant.shipping_cost ?? 0) : 0), tenant?.currency)}</span>
           </div>
 
-          {!loadingTenant && tenant && !tenant.is_open && (
+          {!loadingTenant && tenant && !isOpenNow(tenant) && (
             <p className="text-xs text-red-700 bg-red-50 rounded px-3 py-2 dark:text-red-200 dark:bg-red-900/30">
-              Esta tienda está temporalmente cerrada.
+              Esta tienda está cerrada.
             </p>
           )}
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { productsApi } from '../../api/products.js';
 import { useCart } from '../../hooks/useCart.js';
 import { formatMoney } from '../../utils/format.js';
+import { isOpenNow } from '../../utils/store.js';
 import ProductCard from './ProductCard.jsx';
 import ProductOptionsModal from './ProductOptionsModal.jsx';
 import CartDrawer from './CartDrawer.jsx';
@@ -133,11 +134,11 @@ export default function StorefrontPage() {
         </div>
       </header>
 
-      {!data.tenant.is_open && (
+      {!isOpenNow(data.tenant) && (
         <div className="bg-red-50 border-b border-red-200 dark:bg-red-900/20 dark:border-red-900">
           <div className="max-w-3xl mx-auto px-4 py-3">
             <p className="text-sm font-medium text-red-800 dark:text-red-300">
-              Esta tienda está temporalmente cerrada. Volvé más tarde.
+              Esta tienda está cerrada. Volvé más tarde.
             </p>
           </div>
         </div>
