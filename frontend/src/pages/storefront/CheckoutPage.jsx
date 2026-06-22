@@ -19,10 +19,17 @@ export default function CheckoutPage() {
   const [loadingTenant, setLoadingTenant] = useState(true);
 
   useEffect(() => {
-    productsApi.listPublic(slug)
-      .then(data => setTenant(data.tenant))
-      .catch(() => {}) // silently fail, will show error on submit
-      .finally(() => setLoadingTenant(false));
+    const load = () => {
+      productsApi.listPublic(slug)
+        .then(data => setTenant(data.tenant))
+        .catch(() => {}); // silently fail, will show error on submit
+    };
+    load();
+    setLoadingTenant(false);
+
+    // Recargar datos del tenant cada 10 segundos para capturar cambios
+    const interval = setInterval(load, 10000);
+    return () => clearInterval(interval);
   }, [slug]);
 
   if (cart.items.length === 0) {

@@ -73,6 +73,16 @@ export default function StorefrontPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // Recargar datos del tenant cada 30 segundos para capturar cambios en horarios/restricciones
+  useEffect(() => {
+    const interval = setInterval(() => {
+      productsApi.listPublic(slug)
+        .then(setData)
+        .catch(() => {}); // silenciosamente ignorar errores en refresco de fondo
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [slug]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">

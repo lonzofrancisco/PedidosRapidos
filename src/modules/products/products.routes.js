@@ -111,6 +111,7 @@ publicProductsRouter.get(
         is_open: req.tenant.is_open,
         shipping_cost: req.tenant.shipping_cost,
         min_order_amount: req.tenant.min_order_amount,
+        opening_hours: req.tenant.opening_hours,
       },
       products,
     });
