@@ -38,9 +38,9 @@ function PlanBanner({ tenant, billing, onRenew, renewing }) {
 
   if (info.status === 'expired') {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4">
-        <p className="font-semibold text-red-800">Tu plan expiró</p>
-        <p className="text-sm text-red-700 mt-1">
+      <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4 dark:bg-red-900/20 dark:border-red-900">
+        <p className="font-semibold text-red-800 dark:text-red-300">Tu plan expiró</p>
+        <p className="text-sm text-red-700 mt-1 dark:text-red-300/90">
           Tu tienda pública está temporalmente desactivada.
           {canPay ? ' Reactivala pagando el plan mensual.' : ' Para reactivarla, contactá al soporte para abonar el plan mensual.'}
         </p>
@@ -50,11 +50,11 @@ function PlanBanner({ tenant, billing, onRenew, renewing }) {
   }
   if (info.status === 'trial') {
     return (
-      <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 mb-4">
-        <p className="font-semibold text-amber-900">
+      <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 mb-4 dark:bg-amber-900/20 dark:border-amber-900">
+        <p className="font-semibold text-amber-900 dark:text-amber-300">
           Prueba gratis — te quedan {info.daysLeft} día{info.daysLeft === 1 ? '' : 's'}
         </p>
-        <p className="text-sm text-amber-800 mt-1">
+        <p className="text-sm text-amber-800 mt-1 dark:text-amber-300/90">
           Vence el {fmt(info.expiresAt)}. Después se activa el plan mensual.
         </p>
         <RenewBtn label="Pagar el plan ahora" />
@@ -62,9 +62,9 @@ function PlanBanner({ tenant, billing, onRenew, renewing }) {
     );
   }
   return (
-    <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 mb-4">
-      <p className="font-semibold text-emerald-900">Plan activo</p>
-      <p className="text-sm text-emerald-800 mt-1">
+    <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 mb-4 dark:bg-emerald-900/20 dark:border-emerald-900">
+      <p className="font-semibold text-emerald-900 dark:text-emerald-300">Plan activo</p>
+      <p className="text-sm text-emerald-800 mt-1 dark:text-emerald-300/90">
         Próxima fecha de pago: {fmt(info.expiresAt)}.
       </p>
       <RenewBtn label="Renovar un mes más" />
@@ -75,7 +75,10 @@ function PlanBanner({ tenant, billing, onRenew, renewing }) {
 export default function SettingsPage() {
   const { token } = useAuth();
   const [tenant, setTenant] = useState(null);
-  const [form, setForm] = useState({ name: '', whatsapp_number: '', image_url: '', background_url: '' });
+  const [form, setForm] = useState({
+    name: '', whatsapp_number: '', image_url: '', background_url: '',
+    is_open: true, shipping_cost: 0, min_order_amount: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -98,6 +101,9 @@ export default function SettingsPage() {
         whatsapp_number: data.whatsapp_number ?? '',
         image_url: data.image_url ?? '',
         background_url: data.background_url ?? '',
+        is_open: data.is_open ?? true,
+        shipping_cost: data.shipping_cost ?? 0,
+        min_order_amount: data.min_order_amount ?? '',
       });
       setBilling(await billingApi.config(token).catch(() => null));
     } catch (err) {
@@ -135,12 +141,29 @@ export default function SettingsPage() {
     setSaving(true);
     setError(null);
     setMessage(null);
+
+    // Validar campos de operacion
+    if (form.shipping_cost < 0) {
+      setError('El costo de envío no puede ser negativo');
+      setSaving(false);
+      return;
+    }
+    const minAmount = form.min_order_amount ? Number(form.min_order_amount) : null;
+    if (minAmount !== null && minAmount < 0) {
+      setError('El mínimo de compra no puede ser negativo');
+      setSaving(false);
+      return;
+    }
+
     try {
       const patch = {
         name: form.name,
         whatsapp_number: form.whatsapp_number,
         image_url: form.image_url || null,
         background_url: form.background_url || null,
+        is_open: form.is_open,
+        shipping_cost: Number(form.shipping_cost),
+        min_order_amount: minAmount,
       };
       const updated = await tenantApi.update(token, patch);
       setTenant(updated);
@@ -236,19 +259,19 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) return <p className="text-slate-500">Cargando...</p>;
+  if (loading) return <p className="text-slate-500 dark:text-slate-400">Cargando...</p>;
 
   return (
     <section className="max-w-2xl">
       <div className="mb-4">
         <h1 className="text-xl font-bold">Tienda</h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           Configura el logo y los datos publicos de tu tienda.
         </p>
       </div>
 
       {pagoMsg && (
-        <div className={`rounded-lg p-3 mb-4 text-sm border ${pagoMsg.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>
+        <div className={`rounded-lg p-3 mb-4 text-sm border ${pagoMsg.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-900 dark:text-emerald-300' : 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-900 dark:text-red-300'}`}>
           {pagoMsg.text}
         </div>
       )}
@@ -260,7 +283,7 @@ export default function SettingsPage() {
         <div>
           <label className="label">Imagen de la tienda</label>
           <div className="flex items-center gap-4 mt-2">
-            <div className="h-20 w-20 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-xs text-slate-400">
+            <div className="h-20 w-20 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-xs text-slate-400 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-500">
               {form.image_url ? (
                 <img
                   src={form.image_url}
@@ -300,15 +323,15 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">
             JPG, PNG, WEBP o GIF. Maximo 2 MB.
           </p>
         </div>
 
         {/* Fondo de la tienda */}
-        <div className="pt-2 border-t border-slate-100">
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
           <label className="label">Fondo de la tienda</label>
-          <div className="mt-2 relative h-28 w-full rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+          <div className="mt-2 relative h-28 w-full rounded-lg overflow-hidden border border-slate-200 bg-slate-100 dark:border-slate-600 dark:bg-slate-700">
             {form.background_url ? (
               <>
                 <img
@@ -317,15 +340,15 @@ export default function SettingsPage() {
                   className="absolute inset-0 h-full w-full object-cover blur-sm scale-105"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-                <div className="absolute inset-0 bg-white/40" />
+                <div className="absolute inset-0 bg-white/40 dark:bg-black/40" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="rounded-lg bg-white shadow px-3 py-2 text-xs text-slate-600">
+                  <span className="rounded-lg bg-white shadow px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-200">
                     Así resaltan tus productos
                   </span>
                 </div>
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
                 sin fondo
               </div>
             )}
@@ -352,13 +375,13 @@ export default function SettingsPage() {
               onChange={onBgFileChange}
             />
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">
             Se muestra difuminado detrás de tus productos. JPG, PNG, WEBP o GIF. Máximo 5 MB.
           </p>
         </div>
 
         {/* Datos basicos */}
-        <form onSubmit={onSave} className="space-y-4 pt-2 border-t border-slate-100">
+        <form onSubmit={onSave} className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-700">
           <div>
             <label className="label">Nombre de la tienda</label>
             <input
@@ -378,20 +401,70 @@ export default function SettingsPage() {
               onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
               placeholder="5491112345678"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
               Numero al que los clientes envian sus pedidos.
             </p>
           </div>
 
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             <p><strong>Slug:</strong> {tenant?.slug}</p>
             <p><strong>Moneda:</strong> {tenant?.currency}</p>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+            <h3 className="font-semibold text-sm mb-3">Operación</h3>
+
+            <div>
+              <label className="label flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_open}
+                  onChange={(e) => setForm({ ...form, is_open: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span>Tienda abierta</span>
+              </label>
+              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+                {form.is_open ? 'Los clientes pueden hacer pedidos' : 'Los clientes no pueden hacer pedidos'}
+              </p>
+            </div>
+
+            <div className="mt-3">
+              <label className="label">Costo de envío ({tenant?.currency})</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="input"
+                value={form.shipping_cost}
+                onChange={(e) => setForm({ ...form, shipping_cost: e.target.value })}
+              />
+              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+                Se suma al total del pedido. Dejar en 0 para envío gratis.
+              </p>
+            </div>
+
+            <div className="mt-3">
+              <label className="label">Mínimo de compra ({tenant?.currency})</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="input"
+                placeholder="Dejar vacío para sin mínimo"
+                value={form.min_order_amount}
+                onChange={(e) => setForm({ ...form, min_order_amount: e.target.value })}
+              />
+              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
+                Monto mínimo que los clientes deben gastar. Dejar vacío para sin restricción.
+              </p>
+            </div>
           </div>
 
           <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
             {error || ' '}
           </p>
-          <p className={`text-sm text-emerald-700 min-h-[1.25rem] ${message ? '' : 'invisible'}`}>
+          <p className={`text-sm text-emerald-700 min-h-[1.25rem] dark:text-emerald-400 ${message ? '' : 'invisible'}`}>
             {message || ' '}
           </p>
 

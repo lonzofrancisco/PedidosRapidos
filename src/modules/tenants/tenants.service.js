@@ -3,7 +3,7 @@ import { notFound } from '../../utils/httpError.js';
 
 const TENANT_COLUMNS = `
   id, slug, name, whatsapp_number, currency, image_url, background_url, active,
-  plan_status, trial_ends_at, paid_until, created_at
+  plan_status, trial_ends_at, paid_until, is_open, shipping_cost, min_order_amount, opening_hours, created_at
 `;
 
 export async function getTenant(tenantId) {
@@ -15,9 +15,25 @@ export async function getTenant(tenantId) {
   return rows[0];
 }
 
-const UPDATABLE_FIELDS = ['name', 'whatsapp_number', 'image_url', 'background_url'];
+const UPDATABLE_FIELDS = [
+  'name', 'whatsapp_number', 'image_url', 'background_url',
+  'is_open', 'shipping_cost', 'min_order_amount', 'opening_hours'
+];
 
 export async function updateTenant(tenantId, patch) {
+  // Validations
+  if (Object.prototype.hasOwnProperty.call(patch, 'shipping_cost') && patch.shipping_cost !== null) {
+    const sc = Number(patch.shipping_cost);
+    if (isNaN(sc) || sc < 0) throw new Error('El costo de envío no puede ser negativo');
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'min_order_amount') && patch.min_order_amount !== null) {
+    const moa = Number(patch.min_order_amount);
+    if (isNaN(moa) || moa < 0) throw new Error('El mínimo de compra no puede ser negativo');
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'opening_hours') && patch.opening_hours !== null) {
+    if (typeof patch.opening_hours !== 'object') throw new Error('Los horarios deben ser un objeto JSON válido');
+  }
+
   const fields = [];
   const values = [];
   for (const key of UPDATABLE_FIELDS) {

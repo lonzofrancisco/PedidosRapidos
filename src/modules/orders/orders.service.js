@@ -148,6 +148,23 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
     });
   }
 
+  // Validaciones de operacion de tienda antes de insertar.
+  if (!tenant.is_open) {
+    throw badRequest('Esta tienda está temporalmente cerrada.');
+  }
+
+  const shippingCost = Number(tenant.shipping_cost ?? 0);
+  const subtotalWithShipping = total + shippingCost;
+
+  if (tenant.min_order_amount !== null && tenant.min_order_amount !== undefined) {
+    const minAmount = Number(tenant.min_order_amount);
+    if (subtotalWithShipping < minAmount) {
+      throw badRequest(`El pedido debe ser de al menos $${minAmount.toFixed(2)}`);
+    }
+  }
+
+  total = subtotalWithShipping;
+
   // 3) Insertar todo en una transaccion.
   const order = await withTransaction(async (client) => {
     // Numero de pedido secuencial por tienda (#1, #2, ...). El UPDATE bloquea

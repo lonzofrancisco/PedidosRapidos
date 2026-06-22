@@ -22,7 +22,7 @@ function CartIcon({ className = 'h-6 w-6' }) {
 function StoreLogo({ tenant }) {
   const initial = (tenant?.name?.trim()?.[0] ?? '?').toUpperCase();
   return (
-    <div className="relative h-11 w-11 shrink-0 rounded-full overflow-hidden border border-slate-200 bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
+    <div className="relative h-11 w-11 shrink-0 rounded-full overflow-hidden border border-slate-200 bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center dark:border-slate-700 dark:from-slate-700 dark:to-slate-800">
       <span className="text-lg font-bold text-brand-500">{initial}</span>
       {tenant?.image_url && (
         <img
@@ -41,11 +41,11 @@ function SkeletonGrid() {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="card overflow-hidden animate-pulse">
-          <div className="aspect-[4/3] bg-slate-200" />
+          <div className="aspect-[4/3] bg-slate-200 dark:bg-slate-700" />
           <div className="p-4 space-y-2">
-            <div className="h-4 w-3/4 rounded bg-slate-200" />
-            <div className="h-3 w-full rounded bg-slate-100" />
-            <div className="mt-4 h-5 w-1/3 rounded bg-slate-200" />
+            <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-3 w-full rounded bg-slate-100 dark:bg-slate-700/60" />
+            <div className="mt-4 h-5 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
           </div>
         </div>
       ))}
@@ -74,11 +74,11 @@ export default function StorefrontPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="sticky top-0 z-10 bg-white border-b border-slate-200">
-          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-            <div className="h-11 w-11 rounded-full bg-slate-200 animate-pulse" />
-            <div className="h-5 w-40 rounded bg-slate-200 animate-pulse" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="sticky top-0 z-10 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+          <div className="max-w-3xl mx-auto pl-4 pr-14 py-3 flex items-center gap-3">
+            <div className="h-11 w-11 rounded-full bg-slate-200 animate-pulse dark:bg-slate-700" />
+            <div className="h-5 w-40 rounded bg-slate-200 animate-pulse dark:bg-slate-700" />
           </div>
         </div>
         <main className="max-w-3xl mx-auto px-4 py-6"><SkeletonGrid /></main>
@@ -89,8 +89,8 @@ export default function StorefrontPage() {
     return (
       <CenterMsg>
         <div className="text-center">
-          <p className="text-slate-700 font-medium">No pudimos cargar la tienda</p>
-          <p className="text-sm text-slate-500 mt-1">{error}</p>
+          <p className="text-slate-700 font-medium dark:text-slate-200">No pudimos cargar la tienda</p>
+          <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">{error}</p>
         </div>
       </CenterMsg>
     );
@@ -101,29 +101,29 @@ export default function StorefrontPage() {
   const bg = data?.tenant?.background_url;
 
   return (
-    <div className={`min-h-screen pb-28 ${bg ? '' : 'bg-slate-50'}`}>
+    <div className={`min-h-screen pb-28 ${bg ? '' : 'bg-slate-50 dark:bg-slate-900'}`}>
       {bg && (
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <img src={bg} alt="" className="w-full h-full object-cover blur-sm scale-110" />
-          <div className="absolute inset-0 bg-white/60" />
+          <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/70" />
         </div>
       )}
-      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-700">
+        <div className="max-w-3xl mx-auto pl-4 pr-14 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <StoreLogo tenant={data.tenant} />
             <div className="min-w-0">
               <h1 className="text-lg font-bold leading-tight truncate">{data.tenant.name}</h1>
-              <p className="text-xs text-slate-400 truncate">Pedí online y coordiná por WhatsApp</p>
+              <p className="text-xs text-slate-400 truncate dark:text-slate-500">Pedí online y coordiná por WhatsApp</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="relative p-2.5 rounded-full hover:bg-slate-100 transition shrink-0"
+            className="relative p-2.5 rounded-full hover:bg-slate-100 transition shrink-0 dark:hover:bg-slate-800"
             aria-label="Ver carrito"
           >
-            <CartIcon className="h-6 w-6 text-slate-700" />
+            <CartIcon className="h-6 w-6 text-slate-700 dark:text-slate-200" />
             {cart.count > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-xs font-semibold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
                 {cart.count}
@@ -133,14 +133,39 @@ export default function StorefrontPage() {
         </div>
       </header>
 
+      {!data.tenant.is_open && (
+        <div className="bg-red-50 border-b border-red-200 dark:bg-red-900/20 dark:border-red-900">
+          <div className="max-w-3xl mx-auto px-4 py-3">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">
+              Esta tienda está temporalmente cerrada. Volvé más tarde.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {(data.tenant.shipping_cost > 0 || data.tenant.min_order_amount) && (
+        <div className="bg-blue-50 border-b border-blue-200 dark:bg-blue-900/20 dark:border-blue-900">
+          <div className="max-w-3xl mx-auto px-4 py-2">
+            <div className="text-xs text-blue-800 space-y-1 dark:text-blue-300">
+              {data.tenant.shipping_cost > 0 && (
+                <p>Envío: {formatMoney(data.tenant.shipping_cost, currency)}</p>
+              )}
+              {data.tenant.min_order_amount && (
+                <p>Mínimo de compra: {formatMoney(data.tenant.min_order_amount, currency)}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-3xl mx-auto px-4 py-6">
         {products.length === 0 ? (
           <div className="text-center py-16">
-            <div className="mx-auto h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-              <CartIcon className="h-7 w-7 text-slate-400" />
+            <div className="mx-auto h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-3 dark:bg-slate-800">
+              <CartIcon className="h-7 w-7 text-slate-400 dark:text-slate-500" />
             </div>
-            <p className="text-slate-600 font-medium">Aún no hay productos</p>
-            <p className="text-sm text-slate-400 mt-1">La tienda todavía no cargó su menú.</p>
+            <p className="text-slate-600 font-medium dark:text-slate-300">Aún no hay productos</p>
+            <p className="text-sm text-slate-400 mt-1 dark:text-slate-500">La tienda todavía no cargó su menú.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -170,6 +195,7 @@ export default function StorefrontPage() {
         onClose={() => setCartOpen(false)}
         cart={cart}
         currency={currency}
+        tenant={data?.tenant}
         onCheckout={() => {
           setCartOpen(false);
           navigate(`/t/${slug}/checkout`);
@@ -198,8 +224,8 @@ export default function StorefrontPage() {
 
 function CenterMsg({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50">
-      <div className="text-slate-600">{children}</div>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50 dark:bg-slate-900">
+      <div className="text-slate-600 dark:text-slate-300">{children}</div>
     </div>
   );
 }

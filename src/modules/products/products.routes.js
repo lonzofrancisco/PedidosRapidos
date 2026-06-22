@@ -108,6 +108,9 @@ publicProductsRouter.get(
         currency: req.tenant.currency,
         image_url: req.tenant.image_url,
         background_url: req.tenant.background_url,
+        is_open: req.tenant.is_open,
+        shipping_cost: req.tenant.shipping_cost,
+        min_order_amount: req.tenant.min_order_amount,
       },
       products,
     });

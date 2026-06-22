@@ -67,6 +67,10 @@ const updateTenantSchema = z.object({
   // local devuelve un path relativo).
   image_url: z.union([z.string().url(), z.string().startsWith('/uploads/'), z.null()]).optional(),
   background_url: z.union([z.string().url(), z.string().startsWith('/uploads/'), z.null()]).optional(),
+  is_open: z.boolean().optional(),
+  shipping_cost: z.union([z.number().nonnegative(), z.null()]).optional(),
+  min_order_amount: z.union([z.number().nonnegative(), z.null()]).optional(),
+  opening_hours: z.record(z.any()).nullable().optional(),
 });
 
 // ---------- Router -----------------------------------------------------
