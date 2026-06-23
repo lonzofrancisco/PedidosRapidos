@@ -17,7 +17,7 @@ export async function resolveTenantBySlug(req, res, next) {
 
     const { rows } = await query(
       `SELECT id, slug, name, whatsapp_number, currency, image_url, background_url, active,
-              plan_status, trial_ends_at, paid_until
+              plan_status, trial_ends_at, paid_until, is_open, shipping_cost, min_order_amount, opening_hours
          FROM tenants
         WHERE slug = $1`,
       [slug]
