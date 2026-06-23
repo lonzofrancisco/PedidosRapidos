@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authApi } from '../../api/auth.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import ThemeToggle from '../../components/ThemeToggle.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -33,10 +34,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <form onSubmit={onSubmit} className="card w-full max-w-md p-8 space-y-4">
+    <>
+      <ThemeToggle className="fixed top-2 left-2 z-50" />
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <form onSubmit={onSubmit} className="card w-full max-w-md p-8 space-y-4">
         <h1 className="text-2xl font-bold">Panel admin</h1>
-        <p className="text-sm text-slate-600">Ingresa con tus credenciales de tienda.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">Ingresa con tus credenciales de tienda.</p>
 
         <div>
           <label className="label">Slug de tienda</label>
@@ -64,10 +67,11 @@ export default function LoginPage() {
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <div className="pt-3 border-t border-slate-200 text-sm text-center">
-          <Link to="/" className="text-slate-500 hover:text-slate-700">&larr; Volver al inicio</Link>
+        <div className="pt-3 border-t border-slate-200 text-sm text-center dark:border-slate-700">
+          <Link to="/" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">&larr; Volver al inicio</Link>
         </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </>
   );
 }

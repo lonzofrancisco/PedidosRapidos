@@ -19,7 +19,8 @@ import { RequireAuth } from './contexts/AuthContext.jsx';
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/signup" element={<SignupPage />} />
 
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="/superAdmin" element={<SuperAdminDashboard />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

@@ -45,9 +45,9 @@ export default function OrderSuccessPage() {
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-xl mx-auto card p-6">
         {justCreated && (
-          <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-            <p className="font-semibold text-emerald-800">Pedido recibido!</p>
-            <p className="text-sm text-emerald-700 mt-1">
+          <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4 dark:bg-emerald-900/20 dark:border-emerald-900">
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300">Pedido recibido!</p>
+            <p className="text-sm text-emerald-700 mt-1 dark:text-emerald-300/90">
               Avisale a la tienda enviando el resumen por WhatsApp.
             </p>
           </div>
@@ -55,9 +55,9 @@ export default function OrderSuccessPage() {
 
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs text-slate-500 uppercase">Pedido</p>
+            <p className="text-xs text-slate-500 uppercase dark:text-slate-400">Pedido</p>
             <h1 className="text-2xl font-bold">#{order.short_code}</h1>
-            <p className="text-xs text-slate-500 mt-1">{formatDate(order.created_at)}</p>
+            <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{formatDate(order.created_at)}</p>
           </div>
           <span className={`badge ${statusMeta.className}`}>{statusMeta.label}</span>
         </div>
@@ -76,27 +76,27 @@ export default function OrderSuccessPage() {
         <div className="space-y-4">
           <section>
             <h2 className="font-semibold text-sm mb-2">Cliente</h2>
-            <div className="text-sm text-slate-700 space-y-0.5">
+            <div className="text-sm text-slate-700 space-y-0.5 dark:text-slate-300">
               <p>{order.customer_name}</p>
               <p>{order.customer_phone}</p>
               {order.customer_address && <p>{order.customer_address}</p>}
-              {order.notes && <p className="italic text-slate-500">{order.notes}</p>}
+              {order.notes && <p className="italic text-slate-500 dark:text-slate-400">{order.notes}</p>}
             </div>
           </section>
 
           <section>
             <h2 className="font-semibold text-sm mb-2">Items</h2>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {order.items?.map(item => (
                 <li key={item.id} className="py-2 flex justify-between gap-3 text-sm">
                   <div>
                     <p className="font-medium">{item.quantity}x {item.product_name}</p>
                     {item.options?.map((o, i) => (
-                      <p key={i} className="text-xs text-slate-500">
+                      <p key={i} className="text-xs text-slate-500 dark:text-slate-400">
                         - {o.group_name}: {(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}{o.option_name}
                       </p>
                     ))}
-                    {item.notes && <p className="text-xs italic text-slate-500">{item.notes}</p>}
+                    {item.notes && <p className="text-xs italic text-slate-500 dark:text-slate-400">{item.notes}</p>}
                   </div>
                   <span>{formatMoney(item.subtotal, order.currency)}</span>
                 </li>
@@ -104,7 +104,7 @@ export default function OrderSuccessPage() {
             </ul>
           </section>
 
-          <div className="flex justify-between font-bold border-t border-slate-200 pt-3">
+          <div className="flex justify-between font-bold border-t border-slate-200 pt-3 dark:border-slate-700">
             <span>Total</span>
             <span>{formatMoney(order.total, order.currency)}</span>
           </div>
@@ -123,7 +123,7 @@ export default function OrderSuccessPage() {
 function Center({ children }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <p className="text-slate-600">{children}</p>
+      <p className="text-slate-600 dark:text-slate-300">{children}</p>
     </div>
   );
 }

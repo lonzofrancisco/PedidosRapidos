@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { superadminApi, setSuperSession } from '../../api/superadmin.js';
+import ThemeToggle from '../../components/ThemeToggle.jsx';
 
 export default function SuperAdminLoginPage() {
   const navigate = useNavigate();
@@ -24,11 +25,13 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-900">
-      <form onSubmit={onSubmit} className="card w-full max-w-md p-8 space-y-4">
+    <>
+      <ThemeToggle className="fixed top-2 left-2 z-50" />
+      <div className="min-h-screen flex items-center justify-center px-4 bg-slate-900">
+        <form onSubmit={onSubmit} className="card w-full max-w-md p-8 space-y-4">
         <div>
           <h1 className="text-2xl font-bold">Panel del sistema</h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-sm text-slate-600 mt-1 dark:text-slate-300">
             Acceso exclusivo del dueno. Gestiona clientes, planes y vencimientos.
           </p>
         </div>
@@ -52,7 +55,8 @@ export default function SuperAdminLoginPage() {
         <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
-      </form>
-    </div>
+        </form>
+      </div>
+    </>
   );
 }

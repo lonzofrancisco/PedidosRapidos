@@ -12,13 +12,15 @@ export default function AdminLayout() {
 
   const tab = ({ isActive }) =>
     `px-3 py-2 text-sm font-medium rounded-lg transition ${
-      isActive ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+      isActive
+        ? 'bg-brand-600 text-white'
+        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
     }`;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
+      <header className="bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+        <div className="max-w-6xl mx-auto pl-4 pr-14 py-3 flex items-center gap-4">
           <Link to="/admin" className="font-bold text-lg">Pedidos Rapidos</Link>
           <nav className="flex gap-2 ml-4">
             <NavLink to="/admin/orders" className={tab}>Pedidos</NavLink>
@@ -27,7 +29,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/settings" className={tab}>Tienda</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="hidden sm:block text-slate-500">
+            <span className="hidden sm:block text-slate-500 dark:text-slate-400">
               {user?.tenant?.name} - {user?.email}
             </span>
             <button onClick={onLogout} className="btn-secondary">Salir</button>
@@ -35,7 +37,7 @@ export default function AdminLayout() {
         </div>
       </header>
 
-      <main className="flex-1 bg-slate-50">
+      <main className="flex-1 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <Outlet />
         </div>

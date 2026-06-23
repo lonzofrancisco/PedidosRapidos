@@ -26,7 +26,7 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString() : '—');
 function StatCard({ label, value, accent }) {
   return (
     <div className="card p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
       <p className={`text-2xl font-bold mt-1 ${accent ?? ''}`}>{value}</p>
     </div>
   );
@@ -45,21 +45,21 @@ function PlanBadge({ tenant }) {
 function CredentialNotice({ notice, onClose }) {
   const copy = () => { navigator.clipboard?.writeText(notice.password).catch(() => {}); };
   return (
-    <div className="card p-4 border border-emerald-200 bg-emerald-50">
+    <div className="card p-4 border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-900/20">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-semibold text-emerald-900">{notice.title}</p>
-          <p className="text-sm text-emerald-800 mt-1">
+          <p className="font-semibold text-emerald-900 dark:text-emerald-300">{notice.title}</p>
+          <p className="text-sm text-emerald-800 mt-1 dark:text-emerald-300/90">
             Acceso: <strong>{notice.email}</strong>
           </p>
-          <p className="text-sm text-emerald-800">
-            Contrasena temporal: <code className="bg-white px-2 py-0.5 rounded border border-emerald-200">{notice.password}</code>
+          <p className="text-sm text-emerald-800 dark:text-emerald-300/90">
+            Contrasena temporal: <code className="bg-white px-2 py-0.5 rounded border border-emerald-200 dark:bg-slate-800 dark:border-emerald-900">{notice.password}</code>
           </p>
-          <p className="text-xs text-emerald-700 mt-1">Guardala ahora: no se vuelve a mostrar.</p>
+          <p className="text-xs text-emerald-700 mt-1 dark:text-emerald-400">Guardala ahora: no se vuelve a mostrar.</p>
         </div>
         <div className="flex flex-col gap-2 shrink-0">
           <button className="btn-secondary text-xs px-2 py-1" onClick={copy}>Copiar</button>
-          <button className="text-xs text-emerald-700 hover:underline" onClick={onClose}>Cerrar</button>
+          <button className="text-xs text-emerald-700 hover:underline dark:text-emerald-400" onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>
@@ -99,7 +99,7 @@ function CreateTenantModal({ token, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4" onMouseDown={onClose}>
       <form
-        className="bg-white rounded-2xl w-full max-w-md p-6 space-y-3 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl w-full max-w-md p-6 space-y-3 max-h-[90vh] overflow-y-auto dark:bg-slate-800"
         onSubmit={onSubmit}
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -266,9 +266,9 @@ export default function SuperAdminDashboard() {
   }, [data.tenants, query]);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-slate-900 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+      <header className="bg-slate-900 text-white dark:bg-slate-950 dark:border-b dark:border-slate-800">
+        <div className="max-w-6xl mx-auto pl-4 pr-14 py-3 flex items-center justify-between">
           <div>
             <h1 className="font-bold">Panel del sistema</h1>
             <p className="text-xs text-slate-400">{session?.email}</p>
@@ -317,15 +317,15 @@ export default function SuperAdminDashboard() {
         </p>
 
         {loading && data.tenants.length === 0 ? (
-          <p className="text-slate-500">Cargando clientes...</p>
+          <p className="text-slate-500 dark:text-slate-400">Cargando clientes...</p>
         ) : data.tenants.length === 0 ? (
-          <p className="text-slate-500">Todavia no hay tiendas registradas.</p>
+          <p className="text-slate-500 dark:text-slate-400">Todavia no hay tiendas registradas.</p>
         ) : filtered.length === 0 ? (
-          <p className="text-slate-500">Ninguna tienda coincide con "{query}".</p>
+          <p className="text-slate-500 dark:text-slate-400">Ninguna tienda coincide con "{query}".</p>
         ) : (
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Tienda</th>
                   <th className="px-4 py-3">Plan</th>
@@ -335,21 +335,21 @@ export default function SuperAdminDashboard() {
                   <th className="px-4 py-3">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {filtered.map((t) => {
                   const busy = busyId === t.id;
                   const expiresAt = t.plan?.expiresAt ?? t.paid_until ?? t.trial_ends_at;
                   return (
-                    <tr key={t.id} className={!t.active ? 'bg-slate-50/60 opacity-70' : ''}>
+                    <tr key={t.id} className={!t.active ? 'bg-slate-50/60 opacity-70 dark:bg-slate-800/40' : ''}>
                       <td className="px-4 py-3">
                         <div className="font-medium">{t.name}</div>
-                        <div className="text-xs text-slate-500">/{t.slug}</div>
-                        {!t.active && <span className="badge bg-slate-200 text-slate-600 mt-1">De baja</span>}
+                        <div className="text-xs text-slate-500 dark:text-slate-400">/{t.slug}</div>
+                        {!t.active && <span className="badge bg-slate-200 text-slate-600 mt-1 dark:bg-slate-700 dark:text-slate-300">De baja</span>}
                       </td>
                       <td className="px-4 py-3">
                         <PlanBadge tenant={t} />
                         {t.plan?.daysLeft != null && t.plan.isActive && (
-                          <div className="text-xs text-slate-500 mt-1">{t.plan.daysLeft} dias</div>
+                          <div className="text-xs text-slate-500 mt-1 dark:text-slate-400">{t.plan.daysLeft} dias</div>
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">{fmtDate(expiresAt)}</td>
@@ -367,20 +367,20 @@ export default function SuperAdminDashboard() {
                              target="_blank" rel="noreferrer">Ver</a>
                           <button className="btn-secondary text-xs px-2 py-1 disabled:opacity-40"
                                   disabled={busy} onClick={() => openAdminAt(t, '/admin/settings')}>Configuracion</button>
-                          <button className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                          <button className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
                                   disabled={busy} onClick={() => onReset(t)}>Reset pass</button>
                           <button
                             className={`text-xs px-2 py-1 rounded-md border disabled:opacity-40 ${
                               t.active
-                                ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                                ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20'
+                                : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400 dark:hover:bg-emerald-900/20'
                             }`}
                             disabled={busy}
                             onClick={() => onToggleActive(t)}
                           >
                             {t.active ? 'Dar de baja' : 'Reactivar'}
                           </button>
-                          <button className="text-xs px-2 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40"
+                          <button className="text-xs px-2 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20"
                                   disabled={busy} onClick={() => onDelete(t)}>Eliminar</button>
                         </div>
                       </td>
@@ -396,11 +396,11 @@ export default function SuperAdminDashboard() {
         <section className="space-y-2">
           <h2 className="text-lg font-semibold">Actividad reciente</h2>
           {audit.length === 0 ? (
-            <p className="text-slate-500 text-sm">Sin actividad registrada.</p>
+            <p className="text-slate-500 text-sm dark:text-slate-400">Sin actividad registrada.</p>
           ) : (
             <div className="card overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-2">Cuando</th>
                     <th className="px-4 py-2">Accion</th>
@@ -408,13 +408,13 @@ export default function SuperAdminDashboard() {
                     <th className="px-4 py-2">Detalle</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {audit.map((a) => (
                     <tr key={a.id}>
-                      <td className="px-4 py-2 whitespace-nowrap text-slate-500">{fmtDateTime(a.created_at)}</td>
+                      <td className="px-4 py-2 whitespace-nowrap text-slate-500 dark:text-slate-400">{fmtDateTime(a.created_at)}</td>
                       <td className="px-4 py-2">{ACTION_LABEL[a.action] ?? a.action}</td>
                       <td className="px-4 py-2">{a.tenant_slug ? `/${a.tenant_slug}` : '—'}</td>
-                      <td className="px-4 py-2 text-xs text-slate-500">
+                      <td className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400">
                         {a.detail ? JSON.stringify(a.detail) : ''}
                       </td>
                     </tr>

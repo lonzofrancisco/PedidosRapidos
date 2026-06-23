@@ -80,20 +80,20 @@ export default function OrderDetailPage() {
   const statusMeta = STATUS_LABELS[order.status] ?? STATUS_LABELS.pending;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         {canManage ? (
-          <Link to="/admin/orders" className="text-sm text-slate-600 hover:text-slate-900">&larr; Pedidos</Link>
+          <Link to="/admin/orders" className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">&larr; Pedidos</Link>
         ) : (
-          <p className="text-sm text-slate-500">Seguimiento de tu pedido</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Seguimiento de tu pedido</p>
         )}
 
         <div className="card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs text-slate-500 uppercase">Pedido</p>
+              <p className="text-xs text-slate-500 uppercase dark:text-slate-400">Pedido</p>
               <h1 className="text-2xl font-bold">#{order.short_code}</h1>
-              <p className="text-xs text-slate-500 mt-1">{formatDate(order.created_at)}</p>
+              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{formatDate(order.created_at)}</p>
             </div>
             <span className={`badge ${statusMeta.className}`}>{statusMeta.label}</span>
           </div>
@@ -121,7 +121,7 @@ export default function OrderDetailPage() {
               <p>{order.customer_name}</p>
               <p>{order.customer_phone}</p>
               {order.customer_address && <p>{order.customer_address}</p>}
-              {order.notes && <p className="italic text-slate-500">{order.notes}</p>}
+              {order.notes && <p className="italic text-slate-500 dark:text-slate-400">{order.notes}</p>}
             </div>
           </div>
           <div>
@@ -132,17 +132,17 @@ export default function OrderDetailPage() {
 
         <div className="card p-5">
           <h2 className="font-semibold text-sm mb-3">Items</h2>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-700">
             {order.items?.map(item => (
               <li key={item.id} className="py-3 flex justify-between gap-3">
                 <div>
                   <p className="font-medium">{item.quantity}x {item.product_name}</p>
                   {item.options?.map((o, i) => (
-                    <p key={i} className="text-xs text-slate-500">
+                    <p key={i} className="text-xs text-slate-500 dark:text-slate-400">
                       - {o.group_name}: {(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}{o.option_name}
                     </p>
                   ))}
-                  {item.notes && <p className="text-xs italic text-slate-500">{item.notes}</p>}
+                  {item.notes && <p className="text-xs italic text-slate-500 dark:text-slate-400">{item.notes}</p>}
                 </div>
                 <span className="text-sm">{formatMoney(item.subtotal, order.currency)}</span>
               </li>
@@ -156,8 +156,8 @@ export default function OrderDetailPage() {
 
 function Center({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50">
-      <p className="text-slate-600">{children}</p>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50 dark:bg-slate-900">
+      <p className="text-slate-600 dark:text-slate-300">{children}</p>
     </div>
   );
 }

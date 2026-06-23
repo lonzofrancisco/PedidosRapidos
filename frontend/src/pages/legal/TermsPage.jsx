@@ -5,21 +5,21 @@ const UPDATED = '18 de junio de 2026';
 function Section({ title, children }) {
   return (
     <section className="mt-5">
-      <h2 className="font-semibold text-slate-900">{title}</h2>
-      <div className="text-sm text-slate-700 space-y-2 mt-1">{children}</div>
+      <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      <div className="text-sm text-slate-700 space-y-2 mt-1 dark:text-slate-300">{children}</div>
     </section>
   );
 }
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <Link to="/" className="text-sm text-slate-600 hover:text-slate-900">&larr; Inicio</Link>
+        <Link to="/" className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">&larr; Inicio</Link>
         <h1 className="text-2xl font-bold mt-2">Términos y Condiciones</h1>
-        <p className="text-xs text-slate-500 mt-1">Última actualización: {UPDATED}</p>
+        <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">Última actualización: {UPDATED}</p>
 
-        <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mt-4">
+        <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mt-4 dark:bg-amber-900/20 dark:border-amber-900 dark:text-amber-300">
           Plantilla orientativa. Reemplazá los datos entre corchetes y revisala con un
           profesional legal antes de publicarla.
         </p>

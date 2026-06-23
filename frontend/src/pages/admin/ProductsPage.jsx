@@ -42,7 +42,7 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold">Productos</h1>
-          <p className="text-sm text-slate-600">Gestiona el catalogo de tu tienda.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Gestiona el catalogo de tu tienda.</p>
         </div>
         <button className="btn-primary" onClick={() => setCreating(true)}>+ Nuevo producto</button>
       </div>
@@ -53,7 +53,7 @@ export default function ProductsPage() {
 
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
             <tr>
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Precio</th>
@@ -62,27 +62,27 @@ export default function ProductsPage() {
               <th className="px-4 py-2 w-1"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {loading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500">Cargando...</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Cargando...</td></tr>
             )}
             {!loading && products.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500">Aun no hay productos.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aun no hay productos.</td></tr>
             )}
             {products.map(p => (
               <tr key={p.id}>
                 <td className="px-4 py-3">
                   <p className="font-medium">{p.name}</p>
-                  {p.description && <p className="text-xs text-slate-500 line-clamp-1">{p.description}</p>}
+                  {p.description && <p className="text-xs text-slate-500 line-clamp-1 dark:text-slate-400">{p.description}</p>}
                 </td>
                 <td className="px-4 py-3">{formatMoney(p.price)}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">
+                <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
                   {(p.option_groups ?? []).length} grupo(s)
                 </td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => onToggleActive(p)}
-                    className={`badge ${p.active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}
+                    className={`badge ${p.active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}
                   >
                     {p.active ? 'Activo' : 'Inactivo'}
                   </button>

@@ -110,21 +110,21 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
 
   return (
     <div className="fixed inset-0 z-20 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col animate-slide-up">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col animate-slide-up dark:bg-slate-800">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between dark:border-slate-700">
           <div>
             <h2 className="text-lg font-bold">{product.name}</h2>
             {product.description && (
-              <p className="text-sm text-slate-600 mt-0.5">{product.description}</p>
+              <p className="text-sm text-slate-600 mt-0.5 dark:text-slate-300">{product.description}</p>
             )}
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none -mt-1">&times;</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none -mt-1 dark:text-slate-500 dark:hover:text-slate-300">&times;</button>
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1">
           {images.length > 0 && (
             <div>
-              <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100">
+              <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700">
                 <img
                   src={images[activeImage] ?? images[0]}
                   alt={product.name}
@@ -162,10 +162,10 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
                   {group.name}
                   {group.required && <span className="badge bg-red-100 text-red-700">Obligatorio</span>}
                   {group.type === 'multi' && (
-                    <span className="text-xs text-slate-500 font-normal">Max {group.max_select}</span>
+                    <span className="text-xs text-slate-500 font-normal dark:text-slate-400">Max {group.max_select}</span>
                   )}
                   {group.type === 'quantity' && (
-                    <span className="text-xs text-slate-500 font-normal">
+                    <span className="text-xs text-slate-500 font-normal dark:text-slate-400">
                       {sumQty} / {group.max_select} unidades
                     </span>
                   )}
@@ -177,11 +177,11 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
 
                     if (group.type === 'quantity') {
                       return (
-                        <div key={opt.id} className={`flex items-center justify-between border rounded-lg px-3 py-2 ${qty > 0 ? 'border-brand-500 bg-brand-50' : 'border-slate-200'}`}>
+                        <div key={opt.id} className={`flex items-center justify-between border rounded-lg px-3 py-2 ${qty > 0 ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/15' : 'border-slate-200 dark:border-slate-600'}`}>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm">{opt.name}</p>
                             {Number(opt.price_delta) > 0 && (
-                              <p className="text-xs text-slate-500">{formatMoney(opt.price_delta, currency)} c/u</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{formatMoney(opt.price_delta, currency)} c/u</p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
                       <label
                         key={opt.id}
                         className={`flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer transition ${
-                          checked ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'
+                          checked ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/15' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700'
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
                           <span className="text-sm">{opt.name}</span>
                         </span>
                         {Number(opt.price_delta) > 0 && (
-                          <span className="text-sm text-slate-600">
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
                             + {formatMoney(opt.price_delta, currency)}
                           </span>
                         )}
@@ -246,7 +246,7 @@ export default function ProductOptionsModal({ product, currency, onClose, onAdd 
           </div>
         </div>
 
-        <div className="border-t border-slate-200 px-5 py-4 space-y-3">
+        <div className="border-t border-slate-200 px-5 py-4 space-y-3 dark:border-slate-700">
           <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>
             {error || ' '}
           </p>

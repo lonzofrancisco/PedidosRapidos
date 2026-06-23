@@ -13,9 +13,9 @@ export default function ProductCard({ product, currency, onSelect }) {
       className="card overflow-hidden text-left flex flex-col group transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
     >
       {/* Imagen con placeholder detras (la inicial se ve si no hay foto o falla) */}
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-brand-50 to-slate-100 overflow-hidden">
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-brand-50 to-slate-100 overflow-hidden dark:from-slate-700 dark:to-slate-800">
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-5xl font-black text-brand-200 select-none">{initial}</span>
+          <span className="text-5xl font-black text-brand-200 select-none dark:text-slate-600">{initial}</span>
         </div>
         {cover && (
           <img
@@ -29,18 +29,18 @@ export default function ProductCard({ product, currency, onSelect }) {
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-semibold leading-snug text-slate-900">{product.name}</h3>
+        <h3 className="font-semibold leading-snug text-slate-900 dark:text-slate-100">{product.name}</h3>
         {product.description && (
-          <p className="text-sm text-slate-500 mt-1 line-clamp-2">{product.description}</p>
+          <p className="text-sm text-slate-500 mt-1 line-clamp-2 dark:text-slate-400">{product.description}</p>
         )}
 
         <div className="mt-auto pt-3 flex items-end justify-between gap-2">
           <div className="min-w-0">
-            <span className="block font-bold text-lg text-slate-900">
+            <span className="block font-bold text-lg text-slate-900 dark:text-slate-100">
               {formatMoney(product.price, currency)}
             </span>
             {hasOptions && (
-              <span className="text-xs text-slate-400">Personalizable</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Personalizable</span>
             )}
           </div>
           <span

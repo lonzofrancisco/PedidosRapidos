@@ -4,6 +4,7 @@ import { productsApi } from '../../api/products.js';
 import { useCart } from '../../hooks/useCart.js';
 import { formatMoney } from '../../utils/format.js';
 import { isOpenNow } from '../../utils/store.js';
+import ThemeToggle from '../../components/ThemeToggle.jsx';
 import ProductCard from './ProductCard.jsx';
 import ProductOptionsModal from './ProductOptionsModal.jsx';
 import CartDrawer from './CartDrawer.jsx';
@@ -120,7 +121,7 @@ export default function StorefrontPage() {
         </div>
       )}
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-700">
-        <div className="max-w-3xl mx-auto pl-4 pr-14 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-3xl mx-auto pl-4 pr-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <StoreLogo tenant={data.tenant} />
             <div className="min-w-0">
@@ -128,19 +129,22 @@ export default function StorefrontPage() {
               <p className="text-xs text-slate-400 truncate dark:text-slate-500">Pedí online y coordiná por WhatsApp</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            className="relative p-2.5 rounded-full hover:bg-slate-100 transition shrink-0 dark:hover:bg-slate-800"
-            aria-label="Ver carrito"
-          >
-            <CartIcon className="h-6 w-6 text-slate-700 dark:text-slate-200" />
-            {cart.count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-xs font-semibold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
-                {cart.count}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle className="" />
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="relative p-2.5 rounded-full hover:bg-slate-100 transition shrink-0 dark:hover:bg-slate-800"
+              aria-label="Ver carrito"
+            >
+              <CartIcon className="h-6 w-6 text-slate-700 dark:text-slate-200" />
+              {cart.count > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-xs font-semibold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
+                  {cart.count}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

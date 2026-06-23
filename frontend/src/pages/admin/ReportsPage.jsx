@@ -43,7 +43,7 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold">Reportes</h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Ventas de los últimos {RANGES.find((r) => r.value === range)?.label}. No incluye pedidos cancelados.
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function ReportsPage() {
 
       <p className={`text-sm text-red-600 min-h-[1.25rem] ${error ? '' : 'invisible'}`}>{error || ' '}</p>
 
-      {loading && !data && <p className="text-slate-500">Cargando...</p>}
+      {loading && !data && <p className="text-slate-500 dark:text-slate-400">Cargando...</p>}
 
       {data && (
         <>
@@ -75,13 +75,13 @@ export default function ReportsPage() {
           <div className="card p-5">
             <h2 className="font-semibold text-sm mb-3">Ventas por día</h2>
             {data.byDay.length === 0 ? (
-              <p className="text-sm text-slate-500">Sin ventas en el período.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Sin ventas en el período.</p>
             ) : (
               <div className="space-y-1">
                 {data.byDay.map((d) => (
                   <div key={d.day} className="flex items-center gap-2 text-xs">
-                    <span className="w-12 shrink-0 text-slate-500">{d.day.slice(5)}</span>
-                    <div className="flex-1 bg-slate-100 rounded h-5 overflow-hidden">
+                    <span className="w-12 shrink-0 text-slate-500 dark:text-slate-400">{d.day.slice(5)}</span>
+                    <div className="flex-1 bg-slate-100 rounded h-5 overflow-hidden dark:bg-slate-700">
                       <div
                         className="h-full bg-brand-500 rounded"
                         style={{ width: `${maxDayRevenue ? Math.max(3, (d.revenue / maxDayRevenue) * 100) : 0}%` }}
@@ -98,13 +98,13 @@ export default function ReportsPage() {
             <div className="card p-5">
               <h2 className="font-semibold text-sm mb-3">Productos más vendidos</h2>
               {data.topProducts.length === 0 ? (
-                <p className="text-sm text-slate-500">Sin datos.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Sin datos.</p>
               ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
+                <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-700">
                   {data.topProducts.map((p, i) => (
                     <li key={i} className="py-2 flex justify-between gap-2">
                       <span className="font-medium">{p.qty}x {p.product_name}</span>
-                      <span className="text-slate-500">{formatMoney(p.revenue, cur)}</span>
+                      <span className="text-slate-500 dark:text-slate-400">{formatMoney(p.revenue, cur)}</span>
                     </li>
                   ))}
                 </ul>
@@ -113,11 +113,11 @@ export default function ReportsPage() {
 
             <div className="card p-5">
               <h2 className="font-semibold text-sm mb-3">Pedidos por estado</h2>
-              <ul className="divide-y divide-slate-100 text-sm">
+              <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-700">
                 {data.byStatus.map((s) => (
                   <li key={s.status} className="py-2 flex justify-between">
                     <span>{STATUS_LABELS[s.status] ?? s.status}</span>
-                    <span className="text-slate-500">{s.orders}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{s.orders}</span>
                   </li>
                 ))}
               </ul>
@@ -132,7 +132,7 @@ export default function ReportsPage() {
 function Kpi({ label, value }) {
   return (
     <div className="card p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
       <p className="text-2xl font-bold mt-1">{value}</p>
     </div>
   );

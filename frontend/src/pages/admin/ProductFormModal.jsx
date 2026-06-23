@@ -171,11 +171,11 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
       <form
         onSubmit={submit}
         onKeyDown={blockEnterSubmit}
-        className="bg-white w-full sm:max-w-2xl max-h-[95vh] rounded-t-2xl sm:rounded-2xl flex flex-col"
+        className="bg-white w-full sm:max-w-2xl max-h-[95vh] rounded-t-2xl sm:rounded-2xl flex flex-col dark:bg-slate-800"
       >
-        <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <header className="px-5 py-4 border-b border-slate-200 flex items-center justify-between dark:border-slate-700">
           <h2 className="font-bold">{isEdit ? 'Editar producto' : 'Nuevo producto'}</h2>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none dark:text-slate-500 dark:hover:text-slate-300">&times;</button>
         </header>
 
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
@@ -199,13 +199,13 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
           <div>
             <div className="flex items-center justify-between">
               <label className="label">Imágenes</label>
-              <span className="text-xs text-slate-400">{form.image_urls.length}/{MAX_IMAGES}</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{form.image_urls.length}/{MAX_IMAGES}</span>
             </div>
 
             {form.image_urls.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
                 {form.image_urls.map((url, idx) => (
-                  <div key={url} className="relative aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+                  <div key={url} className="relative aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100 dark:border-slate-600 dark:bg-slate-700">
                     <img src={url} alt={`Imagen ${idx + 1}`} className="h-full w-full object-cover"
                          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     {idx === 0 && (
@@ -216,10 +216,10 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                             aria-label="Quitar imagen">&times;</button>
                     <div className="absolute bottom-1 inset-x-1 flex justify-between">
                       <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0}
-                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30"
+                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30 dark:bg-slate-900/70 dark:text-slate-200"
                               aria-label="Mover a la izquierda">&lsaquo;</button>
                       <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === form.image_urls.length - 1}
-                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30"
+                              className="h-5 w-5 rounded bg-white/80 text-slate-700 text-sm leading-none flex items-center justify-center disabled:opacity-30 dark:bg-slate-900/70 dark:text-slate-200"
                               aria-label="Mover a la derecha">&rsaquo;</button>
                     </div>
                   </div>
@@ -243,7 +243,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
               className="hidden"
               onChange={onFilesChange}
             />
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">
               JPG, PNG, WEBP o GIF. Máximo 2 MB cada una. La primera es la portada (usá las flechas para reordenar).
             </p>
           </div>
@@ -253,14 +253,14 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
             Activo (visible en storefront)
           </label>
 
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-sm">Opciones del producto</h3>
               <button type="button" onClick={addGroup} className="btn-secondary text-xs">+ Agregar card</button>
             </div>
 
             {groups.length === 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Opcional. Cada card es una elección que ve el cliente.
                 Ej: "Medida" o "Color" (ferretería), "Tamaño" o "Extras" (comida).
               </p>
@@ -268,7 +268,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
 
             <div className="space-y-3">
               {groups.map((g, gi) => (
-                <div key={g.id ?? `new-${gi}`} className="border border-slate-200 rounded-lg p-3 space-y-2">
+                <div key={g.id ?? `new-${gi}`} className="border border-slate-200 rounded-lg p-3 space-y-2 dark:border-slate-700">
                   <div className="flex items-center gap-2">
                     <input className="input flex-1" placeholder="Nombre de la card * (ej: Medida, Tamaño)" required
                            value={g.name} onChange={(e) => updateGroup(gi, { name: e.target.value })} />
@@ -280,7 +280,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-slate-600 mb-1">¿Cómo elige el cliente?</p>
+                    <p className="text-xs font-medium text-slate-600 mb-1 dark:text-slate-300">¿Cómo elige el cliente?</p>
                     <div className="grid grid-cols-3 gap-2">
                       {TYPE_OPTIONS.map(t => (
                         <button
@@ -289,15 +289,15 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                           onClick={() => updateGroup(gi, { type: t.value })}
                           className={`text-center rounded-lg border px-2 py-2 text-xs font-semibold transition ${
                             g.type === t.value
-                              ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500'
-                              : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                              ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500 dark:bg-brand-500/15 dark:text-brand-300'
+                              : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700'
                           }`}
                         >
                           {t.title}
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
                       {TYPE_OPTIONS.find(t => t.value === g.type)?.hint}
                     </p>
                   </div>
@@ -316,7 +316,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
                     </div>
                   )}
                   {g.type === 'quantity' && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Cada opcion tendra su propio contador en el storefront.
                       Min/Max se aplican a la cantidad TOTAL del grupo.
                     </p>
@@ -324,7 +324,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
 
                   <div className="space-y-1">
                     {g.options.length === 0 && (
-                      <p className="text-xs text-slate-400 italic">Sin opciones aun.</p>
+                      <p className="text-xs text-slate-400 italic dark:text-slate-500">Sin opciones aun.</p>
                     )}
                     {g.options.map((o, oi) => (
                       <div key={o.id ?? `new-${oi}`} className="flex gap-2">
@@ -362,7 +362,7 @@ export default function ProductFormModal({ mode, product, onClose, onSaved }) {
           </p>
         </div>
 
-        <footer className="border-t border-slate-200 px-5 py-3 flex justify-end gap-2">
+        <footer className="border-t border-slate-200 px-5 py-3 flex justify-end gap-2 dark:border-slate-700">
           <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? 'Guardando...' : (isEdit ? 'Guardar' : 'Crear')}
