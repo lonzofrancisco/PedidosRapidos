@@ -61,6 +61,7 @@ export default function HomePage() {
             <Link to="/privacidad" className="hover:underline">Privacidad</Link>
           </div>
         </div>
+        </div>
       </div>
     </>
   );

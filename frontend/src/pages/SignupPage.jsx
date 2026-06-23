@@ -161,6 +161,7 @@ export default function SignupPage() {
             Iniciá sesión
           </Link>
         </div>
+        </div>
       </div>
     </>
   );
