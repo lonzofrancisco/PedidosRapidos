@@ -34,7 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-prod}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
-      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-owner@pedidos.local}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-lonzo.francisco.lonzo@gmail.com}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin123}
       SUPERADMIN_JWT_EXPIRES_IN: ${SUPERADMIN_JWT_EXPIRES_IN:-8h}
       UPLOAD_DIR: /app/uploads
