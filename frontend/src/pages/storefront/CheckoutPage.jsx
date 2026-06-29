@@ -84,8 +84,14 @@ export default function CheckoutPage() {
         })),
       };
       const result = await ordersApi.create(slug, payload);
-      localStorage.removeItem(`pedidos:cart:${slug}`);
+
+      // Limpiar carrito ANTES de navegar para evitar race conditions
+      const cartKey = `pedidos:cart:${slug}`;
+      localStorage.removeItem(cartKey);
+      localStorage.removeItem(`${cartKey}:temp`);
       cart.clear();
+
+      // Navegar a página de éxito
       navigate(`/t/${slug}/orders/${result.order.id}`, {
         state: { whatsappUrl: result.whatsappUrl, justCreated: true },
       });
