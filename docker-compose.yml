@@ -39,12 +39,12 @@ services:
       SUPERADMIN_JWT_EXPIRES_IN: ${SUPERADMIN_JWT_EXPIRES_IN:-8h}
       UPLOAD_DIR: /app/uploads
       APP_NAME: ${APP_NAME:-Pedidos Rapidos}
-      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
       SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_USER: ${SMTP_USER:-tu-email@gmail.com}
+      SMTP_PASS: ${SMTP_PASS:-tu-api-key-brevo}
       SMTP_SECURE: ${SMTP_SECURE:-false}
-      EMAIL_FROM: ${EMAIL_FROM:-Pedidos Rapidos <no-reply@pedidos.local>}
+      EMAIL_FROM: ${EMAIL_FROM:-Pedidos Rapidos <noreply@pedidos.local>}
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
       MP_PLAN_PRICE: ${MP_PLAN_PRICE:-0}
       MP_PLAN_DAYS: ${MP_PLAN_DAYS:-30}
