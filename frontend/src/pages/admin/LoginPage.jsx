@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../api/auth.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import ThemeToggle from '../../components/ThemeToggle.jsx';
@@ -8,7 +8,9 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const from = location.state?.from?.pathname || '/admin';
+  const resetSuccess = searchParams.get('reset') === 'ok';
 
   const [form, setForm] = useState({
     tenant_slug: '',
@@ -41,6 +43,14 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold">Panel admin</h1>
         <p className="text-sm text-slate-600 dark:text-slate-300">Ingresa con tus credenciales de tienda.</p>
 
+        {resetSuccess && (
+          <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm text-green-700 dark:text-green-300">
+              ✓ Contraseña actualizada. Inicia sesión con tu nueva contraseña.
+            </p>
+          </div>
+        )}
+
         <div>
           <label className="label">Slug de tienda</label>
           <input className="input" value={form.tenant_slug} required autoComplete="off"
@@ -67,8 +77,13 @@ export default function LoginPage() {
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <div className="pt-3 border-t border-slate-200 text-sm text-center dark:border-slate-700">
-          <Link to="/" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">&larr; Volver al inicio</Link>
+        <div className="pt-3 border-t border-slate-200 text-sm text-center dark:border-slate-700 space-y-2">
+          <Link to="/admin/forgot-password" className="block text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            ¿Olvidé mi contraseña?
+          </Link>
+          <Link to="/" className="block text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            &larr; Volver al inicio
+          </Link>
         </div>
         </form>
       </div>

@@ -49,6 +49,9 @@ export const env = {
   mpPlanPrice: Number(process.env.MP_PLAN_PRICE ?? 0),
   mpPlanDays: Number(process.env.MP_PLAN_DAYS ?? 30),
   mpPlanCurrency: process.env.MP_PLAN_CURRENCY ?? 'ARS',
+  // ---- Password Reset (recuperacion de contraseña) ----------------------
+  // Tiempo de vida de los links de recuperacion de contraseña (en minutos).
+  passwordResetTokenExpiry: Number(process.env.PASSWORD_RESET_TOKEN_EXPIRY ?? 30),
 };
 
 // Fail-fast si en produccion arrancamos con el secret placeholder.

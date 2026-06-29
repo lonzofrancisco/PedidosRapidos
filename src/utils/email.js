@@ -95,6 +95,32 @@ export function sendWelcomeEmail({ to, tenantName, slug }) {
   });
 }
 
+/** Recuperacion de contraseña - link con token de una sola vez. */
+export function sendPasswordResetEmailWithToken({ to, resetLink, expiresInMinutes = 30 }) {
+  const expiresAtTime = new Date(Date.now() + expiresInMinutes * 60000).toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return sendEmail({
+    to,
+    subject: `${env.appName} · Recuperar contraseña`,
+    html: layout('Recuperar tu contraseña', `
+      <p>Recibimos una solicitud para recuperar tu contraseña.</p>
+      <p style="margin:24px 0">
+        <a href="${resetLink}" style="display:inline-block;padding:12px 32px;background:#2563eb;color:white;text-decoration:none;border-radius:6px;font-weight:bold">
+          Recuperar contraseña
+        </a>
+      </p>
+      <p style="font-size:13px;color:#64748b;margin-top:20px">
+        <strong>Este link expira en ${expiresInMinutes} minutos</strong> (a las ${expiresAtTime}).
+        <br />
+        Si no solicitaste esto, ignora este email.
+      </p>
+    `),
+  });
+}
+
 function stripHtml(html = '') {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }

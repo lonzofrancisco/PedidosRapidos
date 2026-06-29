@@ -5,6 +5,8 @@ import StorefrontPage from './pages/storefront/StorefrontPage.jsx';
 import CheckoutPage from './pages/storefront/CheckoutPage.jsx';
 import OrderSuccessPage from './pages/storefront/OrderSuccessPage.jsx';
 import LoginPage from './pages/admin/LoginPage.jsx';
+import ForgotPasswordPage from './pages/admin/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/admin/ResetPasswordPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import ProductsPage from './pages/admin/ProductsPage.jsx';
 import OrdersPage from './pages/admin/OrdersPage.jsx';
@@ -29,6 +31,8 @@ export default function App() {
       <Route path="/t/:slug/orders/:orderId" element={<OrderSuccessPage />} />
 
       <Route path="/admin/login" element={<LoginPage />} />
+      <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/admin/reset-password/:token" element={<ResetPasswordPage />} />
 
       {/* Detalle de pedido compartido: lo abre la tienda (gestiona el estado)
           y tambien el comprador desde el link (solo lectura). Por eso vive
