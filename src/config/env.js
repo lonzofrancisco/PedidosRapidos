@@ -52,6 +52,12 @@ export const env = {
   // ---- Password Reset (recuperacion de contraseña) ----------------------
   // Tiempo de vida de los links de recuperacion de contraseña (en minutos).
   passwordResetTokenExpiry: Number(process.env.PASSWORD_RESET_TOKEN_EXPIRY ?? 30),
+  // ---- Logging Centralizado (Loki) - OPCIONAL ----------------------------
+  // Si LOKI_HOST no está seteado, los logs solo van a consola.
+  lokiHost: process.env.LOKI_HOST ?? 'http://loki:3100',
+  lokiUser: process.env.LOKI_USER ?? '',
+  lokiPass: process.env.LOKI_PASS ?? '',
+  logLevel: process.env.LOG_LEVEL ?? 'info',
 };
 
 // Fail-fast si en produccion arrancamos con el secret placeholder.

@@ -3,6 +3,10 @@ import { env } from './config/env.js';
 import { pool } from './config/db.js';
 import { runMigrations } from './config/migrate.js';
 import { startTrialReminderJob } from './jobs/trialReminders.js';
+import { replaceConsole } from './utils/logger.js';
+
+// Inicializar logger centralizado (console.log/error/warn van a Loki si está disponible)
+replaceConsole();
 
 // Aplica migraciones pendientes (db/*.sql) antes de aceptar trafico. Si fallan,
 // abortamos: mejor no arrancar que servir con la DB a medio migrar.

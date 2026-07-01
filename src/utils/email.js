@@ -84,13 +84,19 @@ export function sendTrialReminderEmail({ to, tenantName, daysLeft, expiresAt }) 
 /** Bienvenida al crear la cuenta. */
 export function sendWelcomeEmail({ to, tenantName, slug }) {
   const storeUrl = env.publicBaseUrl ? `${env.publicBaseUrl}/t/${slug}` : `/t/${slug}`;
+  const adminUrl = env.publicBaseUrl ? `${env.publicBaseUrl}/admin/login` : '/admin/login';
   return sendEmail({
     to,
     subject: `${env.appName} · Tu tienda ${tenantName} está lista`,
     html: layout('¡Bienvenido!', `
       <p>Creamos tu tienda <b>${tenantName}</b>. Tenés 15 días de prueba gratis.</p>
       <p>Tu link público para compartir con tus clientes:<br><a href="${storeUrl}">${storeUrl}</a></p>
-      <p>Entrá al panel para cargar tus productos.</p>
+      <p style="margin:24px 0">
+        <a href="${adminUrl}" style="display:inline-block;padding:12px 32px;background:#2563eb;color:white;text-decoration:none;border-radius:6px;font-weight:bold">
+          Acceder al panel de administración
+        </a>
+      </p>
+      <p>Desde el panel podés cargar productos, gestionar pedidos y ver tus reportes.</p>
     `),
   });
 }

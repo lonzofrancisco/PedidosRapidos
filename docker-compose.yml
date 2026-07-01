@@ -77,6 +77,40 @@ services:
     ports:
       - "${ADMINER_PORT:-8081}:8080"
 
+  loki:
+    image: grafana/loki:latest
+    container_name: pedidos_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./etc/loki/loki-config.yml:/etc/loki/local-config.yml
+      - pedidos_loki:/loki
+    command: -config.file=/etc/loki/local-config.yml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/loki/api/v1/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pedidos_grafana
+    restart: unless-stopped
+    depends_on:
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - "3000:3000"
+    volumes:
+      - pedidos_grafana:/var/lib/grafana
+      - ./etc/grafana/provisioning:/etc/grafana/provisioning
+
 volumes:
   pedidos_pgdata:
   pedidos_uploads:
+  pedidos_loki:
+  pedidos_grafana:
