@@ -6,6 +6,8 @@ import { env } from '../../config/env.js';
 import { unauthorized, badRequest, notFound } from '../../utils/httpError.js';
 import { sendPasswordResetEmailWithToken } from '../../utils/email.js';
 
+const BCRYPT_ROUNDS = 9;
+
 /**
  * Login de admin: el email es unico por tenant, asi que pedimos
  * tenant_slug + email + password.
@@ -73,7 +75,7 @@ export async function requestPasswordReset(email, tenantSlug, req) {
 
   // Generate: 32 random bytes as hex string (64 chars)
   const tokenPlain = crypto.randomBytes(32).toString('hex');
-  const tokenHash = await bcrypt.hash(tokenPlain, 10);
+  const tokenHash = await bcrypt.hash(tokenPlain, BCRYPT_ROUNDS);
 
   const expiresAt = new Date(Date.now() + env.passwordResetTokenExpiry * 60000).toISOString();
 
@@ -158,7 +160,7 @@ export async function resetPasswordWithToken(tokenPlain, tenantSlug, newPassword
   if (!tokenMatch) throw unauthorized('Link de recuperación inválido');
 
   // Hash new password and update
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
   await query(
     `UPDATE users

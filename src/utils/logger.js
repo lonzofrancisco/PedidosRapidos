@@ -33,30 +33,39 @@ export const logger = pino(
 
 // Reemplazar console.log/error con logger
 export function replaceConsole() {
-  const originalLog = console.log;
-  const originalError = console.error;
-  const originalWarn = console.warn;
-  const originalInfo = console.info;
+  const serializeArgs = (args) => {
+    return args.map(arg => {
+      if (typeof arg === 'string') return arg.slice(0, 200);
+      if (typeof arg === 'object' && arg !== null) {
+        try {
+          return JSON.stringify(arg).slice(0, 200);
+        } catch {
+          return String(arg).slice(0, 200);
+        }
+      }
+      return String(arg).slice(0, 200);
+    });
+  };
 
   console.log = (...args) => {
     const msg = args[0] || '';
-    logger.info({ raw: args }, msg);
+    logger.info({ raw: serializeArgs(args) }, msg);
   };
 
   console.error = (...args) => {
     const msg = args[0] || '';
     const err = args[1] instanceof Error ? args[1] : new Error(msg);
-    logger.error({ raw: args, error: err }, msg);
+    logger.error({ raw: serializeArgs(args), error: err }, msg);
   };
 
   console.warn = (...args) => {
     const msg = args[0] || '';
-    logger.warn({ raw: args }, msg);
+    logger.warn({ raw: serializeArgs(args) }, msg);
   };
 
   console.info = (...args) => {
     const msg = args[0] || '';
-    logger.info({ raw: args }, msg);
+    logger.info({ raw: serializeArgs(args) }, msg);
   };
 }
 

@@ -36,7 +36,7 @@ export async function signup(payload) {
       [slug, payload.tenant_name.trim(), payload.whatsapp_number.trim()]
     );
 
-    const passwordHash = await bcrypt.hash(payload.admin_password, 10);
+    const passwordHash = await bcrypt.hash(payload.admin_password, 9);
 
     const { rows: [user] } = await client.query(
       `INSERT INTO users (tenant_id, email, password_hash, role)

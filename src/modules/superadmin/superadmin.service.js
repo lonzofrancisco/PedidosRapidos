@@ -231,7 +231,7 @@ export async function createTenant(payload, actor) {
       [slug, payload.tenant_name.trim(), payload.whatsapp_number.trim(), trialEndsAt]
     );
 
-    const passwordHash = await bcrypt.hash(rawPassword, 10);
+    const passwordHash = await bcrypt.hash(rawPassword, 9);
     await client.query(
       `INSERT INTO users (tenant_id, email, password_hash, role)
        VALUES ($1, $2, $3, 'admin')`,
@@ -283,7 +283,7 @@ export async function resetAdminPassword(tenantId, newPassword, actor) {
   if (!user) throw notFound('El tenant no tiene usuarios');
 
   const password = (newPassword && newPassword.trim()) || genTempPassword();
-  const hash = await bcrypt.hash(password, 10);
+  const hash = await bcrypt.hash(password, 9);
   await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hash, user.id]);
 
   await logAction(actor, 'reset_password', {

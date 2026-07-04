@@ -54,10 +54,48 @@ export async function listProducts(tenantId, { onlyActive = true } = {}) {
 }
 
 export async function getProduct(tenantId, productId) {
-  const list = await listProducts(tenantId, { onlyActive: false });
-  const found = list.find(p => p.id === productId);
-  if (!found) throw notFound('Producto no encontrado');
-  return found;
+  // Direct query instead of loading all products - avoids N+1 pattern
+  const { rows: [product] } = await query(
+    `SELECT id, category_id, name, description, price, image_url, image_urls, active
+       FROM products
+      WHERE tenant_id = $1 AND id = $2`,
+    [tenantId, productId]
+  );
+
+  if (!product) throw notFound('Producto no encontrado');
+
+  // Load groups and options efficiently
+  const { rows: groups } = await query(
+    `SELECT id, product_id, name, type, required, min_select, max_select, position
+       FROM product_option_groups
+      WHERE tenant_id = $1 AND product_id = $2
+      ORDER BY position, name`,
+    [tenantId, productId]
+  );
+
+  if (groups.length === 0) return { ...product, option_groups: [] };
+
+  const groupIds = groups.map(g => g.id);
+  const { rows: options } = await query(
+    `SELECT id, group_id, name, price_delta, position, active
+       FROM product_options
+      WHERE tenant_id = $1 AND group_id = ANY($2::uuid[])
+      ORDER BY position, name`,
+    [tenantId, groupIds]
+  );
+
+  const optionsByGroup = new Map();
+  for (const o of options) {
+    if (!optionsByGroup.has(o.group_id)) optionsByGroup.set(o.group_id, []);
+    optionsByGroup.get(o.group_id).push(o);
+  }
+
+  const groupsWithOptions = groups.map(g => ({
+    ...g,
+    options: optionsByGroup.get(g.id) ?? [],
+  }));
+
+  return { ...product, option_groups: groupsWithOptions };
 }
 
 /**

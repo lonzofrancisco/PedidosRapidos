@@ -77,18 +77,28 @@ services:
     ports:
       - "${ADMINER_PORT:-8081}:8080"
 
-  # NOTA: Loki desactivado por ahora (problemas de config en Docker)
-  # Se puede re-activar con setup simplificado después
-  # loki:
-  #   image: grafana/loki:latest
-  #   ...
+  loki:
+    image: grafana/loki:2.8.0
+    container_name: pedidos_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./etc/loki/loki-config.yml:/etc/loki/local-config.yml
+      - pedidos_loki:/loki
+    command: -config.file=/etc/loki/local-config.yml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/loki/api/v1/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   grafana:
     image: grafana/grafana:latest
     container_name: pedidos_grafana
     restart: unless-stopped
-    # depends_on:
-    #   - loki
+    depends_on:
+      - loki
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
@@ -97,7 +107,7 @@ services:
       - "3001:3000"
     volumes:
       - pedidos_grafana:/var/lib/grafana
-      # - ./etc/grafana/provisioning:/etc/grafana/provisioning  # Comentado hasta que Loki funcione
+      - ./etc/grafana/provisioning:/etc/grafana/provisioning
 
 volumes:
   pedidos_pgdata:
