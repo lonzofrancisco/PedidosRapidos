@@ -118,24 +118,3 @@ export async function requirePlanActive(req, res, next) {
     next(err);
   }
 }
-
-/**
- * Invalidate caches when tenant is updated
- */
-export function invalidateTenantCache(tenantIdOrSlug) {
-  // If it's a UUID-like string, assume it's tenant ID
-  if (tenantIdOrSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i)) {
-    planCache.delete(`plan:${tenantIdOrSlug}`);
-  } else {
-    // Otherwise assume it's slug
-    tenantCache.delete(`tenant:${tenantIdOrSlug}`);
-  }
-}
-
-/**
- * Invalidate all tenant caches (use after bulk updates)
- */
-export function invalidateAllTenantCaches() {
-  tenantCache.invalidate(/^tenant:/);
-  planCache.invalidate(/^plan:/);
-}
