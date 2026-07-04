@@ -66,7 +66,9 @@ router.use(requireSuperAdmin);
 router.get(
   '/tenants',
   asyncHandler(async (req, res) => {
-    res.json(await service.listTenants());
+    const limit = Math.min(Number(req.query.limit) || 50, 100);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+    res.json(await service.listTenants({ limit, offset }));
   })
 );
 

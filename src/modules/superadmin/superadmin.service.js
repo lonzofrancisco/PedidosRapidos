@@ -105,14 +105,24 @@ export async function listAudit(limit = 100) {
  * Lista todos los tenants (clientes del sistema) con su plan calculado,
  * conteos de productos/pedidos y estadisticas agregadas para el dashboard.
  */
-export async function listTenants() {
+export async function listTenants({ limit = 50, offset = 0 } = {}) {
+  // Use window functions and aggregates instead of subqueries
   const { rows } = await query(
     `SELECT ${TENANT_COLUMNS_T},
-            (SELECT count(*) FROM products p WHERE p.tenant_id = t.id)::int AS products_count,
-            (SELECT count(*) FROM orders   o WHERE o.tenant_id = t.id)::int AS orders_count,
-            (SELECT max(created_at) FROM orders o WHERE o.tenant_id = t.id) AS last_order_at
+            COUNT(DISTINCT p.id) OVER (PARTITION BY t.id)::int AS products_count,
+            COUNT(DISTINCT o.id) OVER (PARTITION BY t.id)::int AS orders_count,
+            MAX(o.created_at) OVER (PARTITION BY t.id) AS last_order_at
        FROM tenants t
-      ORDER BY t.created_at DESC`
+       LEFT JOIN products p ON p.tenant_id = t.id
+       LEFT JOIN orders o ON o.tenant_id = t.id
+      ORDER BY t.created_at DESC
+      LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  // Get total count for pagination
+  const { rows: [{ total }] } = await query(
+    `SELECT COUNT(*)::int AS total FROM tenants`
   );
 
   const tenants = rows.map(decorate);
@@ -120,14 +130,14 @@ export async function listTenants() {
   // Categorias mutuamente excluyentes (suman al total): pago / prueba /
   // vencido / de baja.
   const stats = {
-    total: tenants.length,
+    total,
     active: tenants.filter((t) => t.active && t.plan.status === 'active').length,
     trial: tenants.filter((t) => t.active && t.plan.status === 'trial').length,
     expired: tenants.filter((t) => t.active && t.plan.isExpired).length,
     suspended: tenants.filter((t) => !t.active).length,
   };
 
-  return { tenants, stats };
+  return { tenants, stats, pagination: { limit, offset, total } };
 }
 
 async function getTenantRow(tenantId) {
