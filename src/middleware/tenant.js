@@ -1,6 +1,7 @@
 import { query } from '../config/db.js';
 import { notFound, forbidden } from '../utils/httpError.js';
 import { computePlanInfo } from '../utils/plan.js';
+import { tenantCache, planCache } from '../utils/cache.js';
 
 /**
  * Resuelve el tenant a partir de:
@@ -15,14 +16,23 @@ export async function resolveTenantBySlug(req, res, next) {
     const slug = req.params.tenantSlug || req.get('X-Tenant-Slug');
     if (!slug) return next(notFound('Tenant slug requerido'));
 
-    const { rows } = await query(
-      `SELECT id, slug, name, whatsapp_number, currency, image_url, background_url, active,
-              plan_status, trial_ends_at, paid_until, is_open, shipping_cost, min_order_amount, opening_hours
-         FROM tenants
-        WHERE slug = $1`,
-      [slug]
-    );
-    const tenant = rows[0];
+    const cacheKey = `tenant:${slug}`;
+    let tenant = tenantCache.get(cacheKey);
+
+    if (!tenant) {
+      const { rows } = await query(
+        `SELECT id, slug, name, whatsapp_number, currency, image_url, background_url, active,
+                plan_status, trial_ends_at, paid_until, is_open, shipping_cost, min_order_amount, opening_hours
+           FROM tenants
+          WHERE slug = $1`,
+        [slug]
+      );
+      tenant = rows[0];
+      if (tenant) {
+        tenantCache.set(cacheKey, tenant);
+      }
+    }
+
     if (!tenant || !tenant.active) return next(notFound('Tenant no encontrado'));
 
     // Si el plan expiro, la tienda publica deja de responder.
@@ -37,6 +47,27 @@ export async function resolveTenantBySlug(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Invalidate caches when tenant is updated
+ */
+export function invalidateTenantCache(tenantIdOrSlug) {
+  // If it's a UUID-like string, assume it's tenant ID
+  if (tenantIdOrSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i)) {
+    planCache.delete(`plan:${tenantIdOrSlug}`);
+  } else {
+    // Otherwise assume it's slug
+    tenantCache.delete(`tenant:${tenantIdOrSlug}`);
+  }
+}
+
+/**
+ * Invalidate all tenant caches (use after bulk updates)
+ */
+export function invalidateAllTenantCaches() {
+  tenantCache.invalidate(/^tenant:/);
+  planCache.invalidate(/^plan:/);
 }
 
 /**
@@ -56,16 +87,25 @@ export function requireTenantContext(req, res, next) {
  */
 export async function requirePlanActive(req, res, next) {
   try {
-    const { rows } = await query(
-      `SELECT plan_status, trial_ends_at, paid_until, active
-         FROM tenants
-        WHERE id = $1`,
-      [req.tenantId]
-    );
-    const tenant = rows[0];
-    if (!tenant || !tenant.active) return next(notFound('Tenant no encontrado'));
+    const cacheKey = `plan:${req.tenantId}`;
+    let planData = planCache.get(cacheKey);
 
-    const plan = computePlanInfo(tenant);
+    if (!planData) {
+      const { rows } = await query(
+        `SELECT plan_status, trial_ends_at, paid_until, active
+           FROM tenants
+          WHERE id = $1`,
+        [req.tenantId]
+      );
+      planData = rows[0];
+      if (planData) {
+        planCache.set(cacheKey, planData);
+      }
+    }
+
+    if (!planData || !planData.active) return next(notFound('Tenant no encontrado'));
+
+    const plan = computePlanInfo(planData);
     if (plan.isExpired) {
       const err = forbidden('Tu plan vencio. Renovalo para seguir usando el panel.');
       err.details = { code: 'plan_expired', plan };
@@ -77,4 +117,25 @@ export async function requirePlanActive(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Invalidate caches when tenant is updated
+ */
+export function invalidateTenantCache(tenantIdOrSlug) {
+  // If it's a UUID-like string, assume it's tenant ID
+  if (tenantIdOrSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i)) {
+    planCache.delete(`plan:${tenantIdOrSlug}`);
+  } else {
+    // Otherwise assume it's slug
+    tenantCache.delete(`tenant:${tenantIdOrSlug}`);
+  }
+}
+
+/**
+ * Invalidate all tenant caches (use after bulk updates)
+ */
+export function invalidateAllTenantCaches() {
+  tenantCache.invalidate(/^tenant:/);
+  planCache.invalidate(/^plan:/);
 }
