@@ -191,24 +191,46 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
     );
     const orderRow = rows[0];
 
-    for (const item of computedItems) {
-      const { rows: [itemRow] } = await client.query(
+    // Bulk insert order_items (single query for all items)
+    if (computedItems.length > 0) {
+      const itemValues = computedItems.map(item => [
+        tenant.id, orderRow.id, item.product_id, item.product_name,
+        item.unit_price.toFixed(2), item.quantity, item.subtotal.toFixed(2), item.notes,
+      ]);
+
+      const placeholders = itemValues.map((_, i) =>
+        `($${i * 8 + 1},$${i * 8 + 2},$${i * 8 + 3},$${i * 8 + 4},$${i * 8 + 5},$${i * 8 + 6},$${i * 8 + 7},$${i * 8 + 8})`
+      ).join(',');
+
+      const { rows: itemRows } = await client.query(
         `INSERT INTO order_items
            (tenant_id, order_id, product_id, product_name, unit_price, quantity, subtotal, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         VALUES ${placeholders}
          RETURNING id`,
-        [
-          tenant.id, orderRow.id, item.product_id, item.product_name,
-          item.unit_price.toFixed(2), item.quantity, item.subtotal.toFixed(2), item.notes,
-        ]
+        itemValues.flat()
       );
 
-      for (const opt of item.options) {
+      // Bulk insert order_item_options (single query for all options)
+      const optionsValues = [];
+      itemRows.forEach((itemRow, idx) => {
+        computedItems[idx].options.forEach(opt => {
+          optionsValues.push([
+            tenant.id, itemRow.id, opt.option_id, opt.group_name,
+            opt.option_name, opt.price_delta.toFixed(2), opt.quantity
+          ]);
+        });
+      });
+
+      if (optionsValues.length > 0) {
+        const optionsPlaceholders = optionsValues.map((_, i) =>
+          `($${i * 7 + 1},$${i * 7 + 2},$${i * 7 + 3},$${i * 7 + 4},$${i * 7 + 5},$${i * 7 + 6},$${i * 7 + 7})`
+        ).join(',');
+
         await client.query(
           `INSERT INTO order_item_options
              (tenant_id, order_item_id, option_id, group_name, option_name, price_delta, quantity)
-           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-          [tenant.id, itemRow.id, opt.option_id, opt.group_name, opt.option_name, opt.price_delta.toFixed(2), opt.quantity]
+           VALUES ${optionsPlaceholders}`,
+          optionsValues.flat()
         );
       }
     }
@@ -229,27 +251,30 @@ export async function createOrder(tenant, payload, { publicBaseUrl } = {}) {
 const ORDER_COLUMNS = `id, short_code, status, total, currency, created_at,
             customer_name, customer_phone, customer_address, notes`;
 
-// Carga items + opciones de un pedido ya leido y los adjunta.
+// Carga items + opciones de un pedido en una sola query con JSON aggregation
 async function attachItems(order) {
-  const items = (await query(
-    `SELECT id, product_id, product_name, unit_price, quantity, subtotal, notes
-       FROM order_items WHERE order_id = $1`,
+  const { rows } = await query(
+    `SELECT oi.id, oi.product_id, oi.product_name, oi.unit_price, oi.quantity, oi.subtotal, oi.notes,
+            COALESCE(json_agg(json_build_object(
+              'id', oio.option_id,
+              'group_name', oio.group_name,
+              'option_name', oio.option_name,
+              'price_delta', oio.price_delta,
+              'quantity', oio.quantity
+            )) FILTER (WHERE oio.id IS NOT NULL), '[]'::json) AS options
+       FROM order_items oi
+       LEFT JOIN order_item_options oio ON oio.order_item_id = oi.id
+      WHERE oi.order_id = $1
+      GROUP BY oi.id
+      ORDER BY oi.id`,
     [order.id]
-  )).rows;
+  );
 
-  if (items.length > 0) {
-    const opts = (await query(
-      `SELECT order_item_id, option_id, group_name, option_name, price_delta, quantity
-         FROM order_item_options WHERE order_item_id = ANY($1::uuid[])`,
-      [items.map(i => i.id)]
-    )).rows;
-    const byItem = new Map();
-    for (const o of opts) {
-      if (!byItem.has(o.order_item_id)) byItem.set(o.order_item_id, []);
-      byItem.get(o.order_item_id).push(o);
-    }
-    for (const it of items) it.options = byItem.get(it.id) ?? [];
-  }
+  // Parse JSON options strings to objects
+  const items = rows.map(item => ({
+    ...item,
+    options: typeof item.options === 'string' ? JSON.parse(item.options) : item.options,
+  }));
 
   return { ...order, items };
 }
