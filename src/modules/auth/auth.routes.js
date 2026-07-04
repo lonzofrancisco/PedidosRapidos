@@ -17,6 +17,14 @@ const loginLimiter = rateLimit({
   message: { error: 'Demasiados intentos. Esperá unos minutos.' },
 });
 
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Esperá 1 hora.' },
+});
+
 const loginSchema = z.object({
   tenant_slug: z.string().min(1),
   email: z.string().email(),
@@ -51,6 +59,7 @@ router.post(
 
 router.post(
   '/forgot-password',
+  passwordResetLimiter,
   validate({ body: forgotPasswordSchema }),
   asyncHandler(async (req, res) => {
     const result = await authService.requestPasswordReset(
@@ -76,6 +85,7 @@ router.post(
 
 router.post(
   '/reset-password',
+  passwordResetLimiter,
   validate({ body: resetPasswordSchema }),
   asyncHandler(async (req, res) => {
     const result = await authService.resetPasswordWithToken(

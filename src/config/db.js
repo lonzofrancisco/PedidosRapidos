@@ -15,6 +15,17 @@ pool.on('error', (err) => {
   console.error('[pg] idle client error', err);
 });
 
+// Health check every 30 seconds to detect connection issues early
+setInterval(async () => {
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+  } catch (err) {
+    console.error('[pg] health check failed', err.message);
+  }
+}, 30_000);
+
 export const query = (text, params) => pool.query(text, params);
 
 /**
